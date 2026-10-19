@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>noob-amanecdy — Developer Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur2"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">noob<em>-amanecdy</em></div>
+  <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+  <div class="loader-text" id="loaderText">initializing...</div>
+</div>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#hero" onclick="closeMobile()">Home</a>
+  <a href="#skills" onclick="closeMobile()">Skills</a>
+  <a href="#projects" onclick="closeMobile()">Projects</a>
+  <a href="#about" onclick="closeMobile()">About</a>
+  <a href="#contact" onclick="closeMobile()">Contact</a>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="nav-logo" href="#hero">noob<em>-amanecdy</em></a>
+  <ul class="nav-links">
+    <li><a href="#skills" data-section="skills">Skills</a></li>
+    <li><a href="#projects" data-section="projects">Projects</a></li>
+    <li><a href="#about" data-section="about">About</a></li>
+    <li><a href="#contact" class="nav-cta">Hire Me</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:.5rem;">
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+    <button class="hamburger" id="hamburger" onclick="toggleMobile()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <p class="hero-eyebrow"><span class="hero-dot"></span>Available for opportunities in Japan 🇯🇵</p>
+  <h1 class="hero-title">
+    Creative<br>
+    <span class="line2">Developer</span><br>
+    <span class="accent">&amp; Designer</span>
+  </h1>
+  <p class="hero-typewriter">I build <span class="tw-text" id="twText"></span><span class="tw-cursor"></span></p>
+  <p class="hero-sub">
+    Fast, beautiful, and interactive digital experiences — from <strong>pixel-perfect UIs</strong> to <strong>scalable backend systems</strong>. Based in Japan, open to IT opportunities.
+  </p>
+  <div class="hero-actions">
+    <a href="#projects" class="btn btn-fill">View My Work →</a>
+    <a href="#contact" class="btn btn-outline">Get In Touch</a>
+  </div>
+  <div class="hero-stats">
+    <div><div class="hstat-num" data-count="15" data-suffix="+">0</div><div class="hstat-label">Projects Built</div></div>
+    <div><div class="hstat-num" data-count="3" data-suffix="+">0</div><div class="hstat-label">Years Coding</div></div>
+    <div><div class="hstat-num" data-count="8" data-suffix="+">0</div><div class="hstat-label">Technologies</div></div>
+    <div><div class="hstat-num" data-count="100" data-suffix="%">0</div><div class="hstat-label">Committed</div></div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <div class="scroll-label">Scroll</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ SKILLS ═══ -->
+<section id="skills">
+  <div class="s-wrap">
+    <div class="s-head reveal">
+      <div class="s-tag">What I Do</div>
+      <h2 class="s-title">Skills &amp; <span>Expertise</span></h2>
+    </div>
+    <div class="skills-layout">
+      <div class="skill-block reveal">
+        <span class="skill-ico">⚡</span>
+        <div class="skill-name">Frontend Development</div>
+        <div class="skill-desc">Blazing-fast, responsive interfaces built with modern frameworks. Every pixel matters, every interaction crafted with care.</div>
+        <div class="pills">
+          <span class="pill">React</span><span class="pill">JavaScript</span>
+          <span class="pill">TypeScript</span><span class="pill">HTML/CSS</span>
+          <span class="pill w">Next.js</span>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">React / JS</span><span class="sbar-pct">50%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a1),#00b8cc);" data-w="90"></div></div>
+          </div>
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">HTML / CSS</span><span class="sbar-pct">95%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a1),#00b8cc);" data-w="95"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-block pink reveal delay-1">
+        <span class="skill-ico">🛠️</span>
+        <div class="skill-name">Backend &amp; APIs</div>
+        <div class="skill-desc">Robust server-side architecture, RESTful APIs, and databases powering real-world applications at scale.</div>
+        <div class="pills">
+          <span class="pill p">Springboot</span><span class="pill p">java</span>
+          <span class="pill p">SQL</span><span class="pill w">MySql</span>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">java / Springboot</span><span class="sbar-pct">70%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a2),#cc0030);" data-w="80"></div></div>
+          </div>
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">Databases</span><span class="sbar-pct">55%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a2),#cc0030);" data-w="75"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-block green reveal delay-2">
+        <span class="skill-ico">🎨</span>
+        <div class="skill-name">UI/UX &amp; Design</div>
+        <div class="skill-desc">Turning wireframes into experiences. I care about how interfaces feel, not just how they look.</div>
+        <div class="pills">
+          <span class="pill g">Figma</span><span class="pill g">Prototyping</span><span class="pill g">Animation</span>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">Figma / Design</span><span class="sbar-pct">5%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a3),#80cc00);" data-w="85"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-block reveal delay-3">
+        <span class="skill-ico">🚀</span>
+        <div class="skill-name">DevOps &amp; Tooling</div>
+        <div class="skill-desc">From dev to production — CI/CD pipelines, containerization, cloud deployments, and version control.</div>
+        <div class="pills">
+          <span class="pill">Git</span><span class="pill">netlifly</span><span class="pill w">Vercel</span>
+        </div>
+        <div class="sbar-row">
+          <div class="sbar-item">
+            <div class="sbar-top"><span class="sbar-label">Git / CI/CD</span><span class="sbar-pct">10%</span></div>
+            <div class="sbar-track"><div class="sbar-fill" style="background:linear-gradient(90deg,var(--a1),#00b8cc);" data-w="88"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ PROJECTS ═══ -->
+<section id="projects">
+  <div class="s-wrap">
+    <div class="s-head reveal">
+      <div class="s-tag">Portfolio</div>
+      <h2 class="s-title">Selected <span>Projects</span></h2>
+    </div>
+    <div class="proj-filter reveal">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="fullstack">Full Stack</button>
+      <button class="filter-btn" data-filter="frontend">Frontend</button>
+      <button class="filter-btn" data-filter="backend">Backend</button>
+      <button class="filter-btn" data-filter="creative">Creative</button>
+    </div>
+    <div class="projects-grid">
+
+      <div class="pcard reveal" data-cat="fullstack">
+        <div class="pcard-thumb t1">
+          <div class="thumb-bg t1"></div>
+          <span class="emoji">🌐</span>
+          <div class="pcard-num">01</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn" title="GitHub">⎔</a>
+            <a href="#" class="pcard-link-btn" title="Live Demo">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">Full Stack</div>
+          <div class="pcard-title">E-Commerce Platform</div>
+          <div class="pcard-desc">Full-featured online store with cart, payments, admin dashboard, and real-time inventory management.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill">React</span><span class="pill">Node.js</span><span class="pill p">Stripe</span><span class="pill w">MongoDB</span>
+        </div>
+      </div>
+
+      <div class="pcard reveal delay-1" data-cat="frontend">
+        <div class="pcard-thumb t2">
+          <div class="thumb-bg t2"></div>
+          <span class="emoji">📊</span>
+          <div class="pcard-num">02</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn">⎔</a>
+            <a href="#" class="pcard-link-btn">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">Dashboard</div>
+          <div class="pcard-title">Analytics Dashboard</div>
+          <div class="pcard-desc">Real-time data visualization with interactive charts, filters, and live WebSocket updates.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill">TypeScript</span><span class="pill p">D3.js</span><span class="pill w">WebSockets</span>
+        </div>
+      </div>
+
+      <div class="pcard reveal delay-2" data-cat="fullstack">
+        <div class="pcard-thumb t3">
+          <div class="thumb-bg t3"></div>
+          <span class="emoji">🤖</span>
+          <div class="pcard-num">03</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn">⎔</a>
+            <a href="#" class="pcard-link-btn">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">AI / API</div>
+          <div class="pcard-title">AI Chat App</div>
+          <div class="pcard-desc">Conversational AI web app with streaming responses, chat history, and multi-language support.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill g">Python</span><span class="pill g">FastAPI</span><span class="pill">React</span>
+        </div>
+      </div>
+
+      <div class="pcard reveal" data-cat="frontend">
+        <div class="pcard-thumb t4">
+          <div class="thumb-bg t4"></div>
+          <span class="emoji">📱</span>
+          <div class="pcard-num">04</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn">⎔</a>
+            <a href="#" class="pcard-link-btn">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">Mobile PWA</div>
+          <div class="pcard-title">Productivity App</div>
+          <div class="pcard-desc">Mobile-first PWA task manager with offline support, push notifications, and multi-device sync.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill w">PWA</span><span class="pill">JavaScript</span><span class="pill p">Firebase</span>
+        </div>
+      </div>
+
+      <div class="pcard reveal delay-1"  data-cat="backend">
+        <div class="pcard-thumb t5">
+          <div class="thumb-bg t5"></div>
+          <span class="emoji">🔐</span>
+          <div class="pcard-num">05</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn">⎔</a>
+            <a href="#" class="pcard-link-btn">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">Security</div>
+          <div class="pcard-title">Auth System</div>
+          <div class="pcard-desc">Production-ready auth with JWT, OAuth2, 2FA, and role-based access control.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill p">Node.js</span><span class="pill p">JWT</span><span class="pill w">PostgreSQL</span>
+        </div>
+      </div>
+
+      <div class="pcard reveal delay-2" data-cat="creative">
+        <div class="pcard-thumb t6">
+          <div class="thumb-bg t6"></div>
+          <span class="emoji">🎮</span>
+          <div class="pcard-num">06</div>
+          <div class="pcard-links">
+            <a href="#" class="pcard-link-btn">⎔</a>
+            <a href="#" class="pcard-link-btn">↗</a>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-cat">Creative</div>
+          <div class="pcard-title">Generative Art Tool</div>
+          <div class="pcard-desc">Browser-based generative art creator using WebGL and Canvas — export as SVG or high-res PNG.</div>
+        </div>
+        <div class="pcard-foot">
+          <span class="pill g">WebGL</span><span class="pill g">Canvas</span><span class="pill w">SVG</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about">
+  <div class="s-wrap">
+    <div class="about-layout">
+      <div>
+        <div class="s-head reveal-l">
+          <div class="s-tag">Background</div>
+          <h2 class="s-title">About <span>Me</span></h2>
+        </div>
+        <div class="about-text reveal-l">
+          <p>Hey! I'm <strong>noob-amanecdy</strong> — a developer with a passion for crafting clean, efficient, and beautiful software. I started coding out of pure curiosity, and it quickly became a craft and a career.</p>
+          <p>I'm based in <span class="hl">Japan 🇯🇵</span>, actively exploring opportunities in the IT sector. I bring a <strong>global mindset</strong> and the work ethic needed to thrive in Japan's tech environment.</p>
+          <p>Whether it's a complex full-stack application or a pixel-perfect landing page, I give every project 100% focus and attention to detail.</p>
+        </div>
+        <div class="timeline reveal-l">
+          <div class="tl-item">
+            <div class="tl-year">2026/03</div>
+            <div>
+              <div class="tl-dot"></div>
+              <div class="tl-role">MANIPAL UNIVERSITY JAIPUR入学</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">2024/03</div>
+            <div>
+              <div class="tl-dot"></div>
+              <div class="tl-role">専門学校卒業</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">2022/04</div>
+            <div>
+              <div class="tl-dot"></div>
+              <div class="tl-role">Started Coding Journey</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal-r">
+        <div class="info-block">
+          <div class="info-block-title">Quick Info</div>
+          <div class="info-row"><span class="info-key">Location</span><span class="info-val blue">Japan 🇯🇵</span></div>
+          <div class="info-row"><span class="info-key">Status</span><span class="info-val green">Open to Work ✓</span></div>
+          <div class="info-row"><span class="info-key">English</span><span class="info-val">Intermediate</span></div>
+          <div class="info-row"><span class="info-key">Japanese</span><span class="info-val">ビジネスレベル 📚</span></div>
+          <div class="info-row"><span class="info-key">Focus</span><span class="info-val">Full Stack</span></div>
+          <div class="info-row"><span class="info-key">Visa</span><span class="info-val">技術・じんぶん・国際業務</span></div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Tools I Use Daily</div>
+          <div class="pills" style="gap:.5rem;">
+            <span class="pill">VS Code</span><span class="pill">Git</span>
+            <span class="pill p">chatgpt</span><span class="pill g">cloudAi</span>
+            <span class="pill w">Postman</span><span class="pill">sourcetree</span>
+            <span class="pill p">A5tool</span><span class="pill g">deeopseek</span>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-title">Currently Learning</div>
+          <div class="pills" style="gap:.5rem;">
+            <span class="pill g">日本語</span>
+            <span class="pill">Java</span>
+            <span class="pill p">JavaScript</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ CONTACT ═══ -->
+<section id="contact">
+  <div class="s-wrap">
+    <div class="s-head reveal" style="text-align:center;">
+      <div class="s-tag" style="justify-content:center;">Let's Connect</div>
+      <h2 class="s-title">Get In <span>Touch</span></h2>
+    </div>
+    <div class="contact-layout">
+      <div class="reveal-l">
+        <div class="contact-text">
+          <p>Looking for a dedicated developer for your team in Japan? Let's talk. Open to full-time, part-time, and contract roles.</p>
+          <p>Have a project in mind or just want to say hi? My inbox is always open.</p>
+        </div>
+        <a href="noob-amanecdy.com" class="c-email">noob-amanecdy.com</a>
+        <div class="social-grid">
+          <a href="https://github.com/" target="_blank" class="soc-btn">
+            <div class="soc-icon">⎔</div>
+            <div><div class="soc-name">GitHub</div><div class="soc-handle">@noob-amanecdy</div></div>
+          </a>
+          <a href="https://vercel.com/amanchaudarys-projects" target="_blank" class="soc-btn">
+            <div class="soc-icon">⎔</div>
+            <div><div class="soc-name">Vercel</div><div class="soc-handle">@noob-amanecdy</div></div>
+          </a>
+          <a href="https://app.netlify.com/teams/amanchaudary/projects" target="_blank" class="soc-btn">
+            <div class="soc-icon">⎔</div>
+            <div><div class="soc-name">netlifly</div><div class="soc-handle">@noob-amanecdy</div></div>
+          </a>
+          <a href="https://linkedin.com/" target="_blank" class="soc-btn">
+            <div class="soc-icon">⬡</div>
+            <div><div class="soc-name">LinkedIn</div><div class="soc-handle">Connect with me</div></div>
+          </a>
+          <a href="aman.pdf" class="soc-btn">
+            <div class="soc-icon">📄</div>
+            <div><div class="soc-name">履歴書</div><div class="soc-handle">Download 履歴書</div></div>
+          </a>
+          <a href="amanwork.pdf" class="soc-btn">
+            <div class="soc-icon">📄</div>
+            <div><div class="soc-name">職務経歴書</div><div class="soc-handle">Download 職務経歴書</div></div>
+          </a>
+        </div>
+      </div>
+      <div class="contact-form reveal-r">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-input" id="fname" placeholder="Your name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="femail" placeholder="your@email.com"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" class="form-input" id="fsubject" placeholder="Job opportunity / Project / Hello"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-input" id="fmessage" placeholder="Tell me about your project or opportunity..."></textarea>
+        </div>
+        <button class="btn-send" id="sendBtn" onclick="handleSend()">Send Message →</button>
+        <div class="form-msg" id="formMsg"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-logo">noob<em>-amanecdy</em></div>
+  <div class="foot-copy">© 2026 · Built with passion in Japan 🇯🇵</div>
+  <a href="#hero" class="foot-back">Back to top ↑</a>
+</footer>
+
+<a href="#hero" id="backTop" title="Back to top">↑</a>
+
+<script src="script.js"></script>
+</body>
+</html>
