@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loom — Generative Art Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../shared.css"/>
+<style>
+.studio{display:grid;grid-template-columns:300px 1fr;gap:1.5rem;max-width:1300px;margin:0 auto;padding:1.5rem;}
+.controls{padding:1.3rem;align-self:start;position:sticky;top:76px;}
+.group{margin-bottom:1.2rem;}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+.mode{background:var(--bg);border:1px solid var(--border2);color:var(--muted2);border-radius:6px;padding:.55rem .4rem;cursor:pointer;font-size:.72rem;}
+.mode.active{border-color:var(--a1);color:var(--a1);background:rgba(0,229,255,.07);}
+.range-row{display:flex;justify-content:space-between;align-items:center;}
+.range-row output{font-family:var(--mono);font-size:.65rem;color:var(--a1);}
+input[type=range]{width:100%;accent-color:#00e5ff;margin-top:.3rem;}
+.palettes{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;}
+.pal{display:flex;height:26px;border-radius:5px;overflow:hidden;border:2px solid transparent;cursor:pointer;padding:0;background:none;}
+.pal.active{border-color:var(--a1);}
+.pal i{flex:1;}
+.seed-row{display:flex;gap:.4rem;}
+.seed-row .input{font-family:var(--mono);font-size:.78rem;}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.btn-row .wide{grid-column:1/-1;}
+.stage{display:flex;flex-direction:column;align-items:center;gap:1rem;min-width:0;}
+.frame{width:100%;max-width:min(78vh,820px);aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.5);position:relative;}
+.frame canvas{width:100%;height:100%;display:block;position:absolute;inset:0;}
+.meta{font-family:var(--mono);font-size:.65rem;color:var(--muted2);display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;}
+.meta b{color:var(--text);font-weight:500;}
+.history{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;}
+.history img{width:58px;height:58px;border-radius:6px;border:1px solid var(--border2);cursor:pointer;transition:border-color .2s;}
+.history img:hover{border-color:var(--a1);}
+@media(max-width:860px){.studio{grid-template-columns:1fr;padding:1rem;}.controls{position:static;order:2;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="../../index.html#projects" class="back-link">← Portfolio</a>
+  <div class="topbar-title">🎨 <span>Loom Studio</span> <span class="demo-badge">Live demo</span></div>
+</header>
+
+<div class="studio">
+  <aside class="card controls">
+    <div class="group">
+      <div class="label">Style</div>
+      <div class="modes" id="modes">
+        <button class="mode active" data-mode="flow">〰 Flow field</button>
+        <button class="mode" data-mode="waves">≋ Waves</button>
+        <button class="mode" data-mode="circles">◎ Circles</button>
+        <button class="mode" data-mode="truchet">◩ Truchet</button>
+        <button class="mode" data-mode="shader" style="grid-column:1/-1">✦ WebGL shader</button>
+      </div>
+    </div>
+    <div class="group">
+      <div class="label">Palette</div>
+      <div class="palettes" id="palettes"></div>
+    </div>
+    <div class="group">
+      <div class="range-row"><label class="label" for="density">Density</label><output id="densityOut"></output></div>
+      <input type="range" id="density" min="10" max="100" value="55"/>
+    </div>
+    <div class="group">
+      <div class="range-row"><label class="label" for="chaos">Chaos</label><output id="chaosOut"></output></div>
+      <input type="range" id="chaos" min="1" max="100" value="40"/>
+    </div>
+    <div class="group">
+      <div class="range-row"><label class="label" for="stroke">Stroke</label><output id="strokeOut"></output></div>
+      <input type="range" id="stroke" min="1" max="12" value="3"/>
+    </div>
+    <div class="group">
+      <div class="label">Seed</div>
+      <div class="seed-row"><input class="input" id="seed" aria-label="Seed"/><button class="btn" id="randBtn" title="Random seed">🎲</button></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-fill wide" id="genBtn">✦ Generate new</button>
+      <button class="btn" id="pngBtn">⬇ PNG 4K</button>
+      <button class="btn" id="svgBtn">⬇ SVG</button>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="frame"><canvas id="c2d" width="1000" height="1000"></canvas><canvas id="cgl" width="1000" height="1000" hidden></canvas></div>
+    <div class="meta"><span>Style <b id="mStyle"></b></span><span>Shapes <b id="mShapes"></b></span><span>Render <b id="mTime"></b></span></div>
+    <div class="history" id="history" aria-label="Recent artworks"></div>
+  </main>
+</div>
+<p class="demo-note">Everything renders in your browser — vector styles export as true SVG, the WebGL shader exports as high-res PNG.<br>Press <b>Space</b> for a new piece · same seed + settings always gives the same artwork.</p>
+
+<script src="../shared.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const SIZE = 1000;
+const PALETTES = [
+  { bg: '#0b0b12', c: ['#00e5ff', '#ff3d6b', '#b8ff57', '#f0f0f8'] },
+  { bg: '#f3ede2', c: ['#1d3557', '#e63946', '#457b9d', '#f4a261'] },
+  { bg: '#10002b', c: ['#e0aaff', '#c77dff', '#9d4edd', '#ff9e00'] },
+  { bg: '#03120e', c: ['#26c485', '#a3e7fc', '#f7f052', '#32908f'] },
+  { bg: '#1a1a1a', c: ['#ff6b35', '#f7c59f', '#efefd0', '#004e89'] },
+  { bg: '#fafafa', c: ['#111111', '#444444', '#888888', '#d00000'] }
+];
+const s = { mode: 'flow', pal: 0, density: 55, chaos: 40, stroke: 3, seed: newSeed() };
+let shapes = [];
+
+function newSeed() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+
+// seeded PRNG (mulberry32) so a seed always reproduces the same piece
+function makeRng(str) {
+  let h = 1779033703 ^ str.length;
+  for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 3432918353), h = h << 13 | h >>> 19;
+  return () => { h |= 0; h = h + 0x6D2B79F5 | 0; let t = Math.imul(h ^ h >>> 15, 1 | h); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+// 2D gradient noise
+function makeNoise(rnd) {
+  const p = Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+  const perm = [...p, ...p];
+  const grad = (h, x, y) => ((h & 1) ? x : -x) + ((h & 2) ? y : -y);
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const lerp = (a, b, t) => a + t * (b - a);
+  return (x, y) => {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255; x -= Math.floor(x); y -= Math.floor(y);
+    const u = fade(x), v = fade(y), a = perm[X] + Y, b = perm[X + 1] + Y;
+    return lerp(lerp(grad(perm[a], x, y), grad(perm[b], x - 1, y), u), lerp(grad(perm[a + 1], x, y - 1), grad(perm[b + 1], x - 1, y - 1), u), v);
+  };
+}
+
+const GENERATORS = {
+  flow(r, n, pal) {
+    const out = [], count = 80 + s.density * 14, scale = .0015 + s.chaos * .00006;
+    for (let i = 0; i < count; i++) {
+      let x = r() * SIZE, y = r() * SIZE;
+      const pts = [[x, y]], len = 20 + Math.floor(r() * 60);
+      for (let k = 0; k < len; k++) {
+        const a = n(x * scale, y * scale) * Math.PI * 4;
+        x += Math.cos(a) * 6; y += Math.sin(a) * 6;
+        if (x < 0 || x > SIZE || y < 0 || y > SIZE) break;
+        pts.push([x, y]);
+      }
+      if (pts.length > 2) out.push({ t: 'path', pts, color: pal.c[Math.floor(r() * pal.c.length)], w: s.stroke * (.4 + r() * .8), o: .55 + r() * .45 });
+    }
+    return out;
+  },
+  waves(r, n, pal) {
+    const out = [], rows = 12 + Math.floor(s.density * .6), gap = (SIZE - 200) / rows;
+    for (let i = 0; i < rows; i++) {
+      const y0 = 100 + i * gap + gap, pts = [];
+      for (let x = 80; x <= SIZE - 80; x += 8) {
+        const mid = 1 - Math.abs(x - SIZE / 2) / (SIZE / 2 - 80);
+        const amp = Math.pow(Math.max(0, mid), 2) * (20 + s.chaos * 2.2);
+        pts.push([x, y0 - Math.abs(n(x * .006, i * .35)) * amp * 2.2 - r() * mid * s.chaos * .08]);
+      }
+      out.push({ t: 'path', pts: [[80, y0], ...pts, [SIZE - 80, y0]], color: pal.c[i % pal.c.length], w: s.stroke * .7, fill: pal.bg, o: 1 });
+    }
+    return out;
+  },
+  circles(r, n, pal) {
+    const out = [], placed = [], tries = 300 + s.density * 40, maxR = 40 + (100 - s.density) * 1.6;
+    for (let i = 0; i < tries; i++) {
+      const x = r() * SIZE, y = r() * SIZE;
+      let rad = maxR;
+      for (const c of placed) rad = Math.min(rad, Math.hypot(c.x - x, c.y - y) - c.r - 4);
+      rad = Math.min(rad, x - 20, y - 20, SIZE - 20 - x, SIZE - 20 - y);
+      if (rad < 4) continue;
+      placed.push({ x, y, r: rad });
+      const color = pal.c[Math.floor(r() * pal.c.length)];
+      const rings = 1 + Math.floor(r() * (1 + s.chaos / 20));
+      for (let k = 0; k < rings; k++) out.push({ t: 'circle', x, y, r: rad * (1 - k / rings), color, w: s.stroke * .6, fill: k === rings - 1 && r() < .3 ? color : null, o: 1 });
+    }
+    return out;
+  },
+  truchet(r, n, pal) {
+    const out = [], cells = 6 + Math.floor(s.density / 6), size = SIZE / cells;
+    const arc = (cx, cy, a0) => Array.from({ length: 13 }, (_, i) => { const a = a0 + i / 12 * Math.PI / 2; return [cx + Math.cos(a) * size / 2, cy + Math.sin(a) * size / 2]; });
+    for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) {
+      const x = i * size, y = j * size;
+      const flip = (n(i * .3, j * .3) + 1) / 2 * (1 - s.chaos / 100) + r() * s.chaos / 100 > .5;
+      const color = pal.c[(i + j) % pal.c.length];
+      const pairs = flip ? [[x, y, 0], [x + size, y + size, Math.PI]] : [[x + size, y, Math.PI / 2], [x, y + size, -Math.PI / 2]];
+      pairs.forEach(([cx, cy, a]) => out.push({ t: 'path', pts: arc(cx, cy, a), color, w: s.stroke * 2.2, o: 1 }));
+    }
+    return out;
+  }
+};
+
+function generate() {
+  const t0 = performance.now(), pal = PALETTES[s.pal];
+  const isGl = s.mode === 'shader';
+  $('c2d').hidden = isGl; $('cgl').hidden = !isGl;
+  $('svgBtn').disabled = isGl;
+  if (isGl) { drawShader($('cgl')); shapes = []; }
+  else {
+    const r = makeRng(`${s.seed}-${s.mode}`), n = makeNoise(r);
+    shapes = GENERATORS[s.mode](r, n, pal);
+    draw($('c2d').getContext('2d'), 1);
+  }
+  $('mStyle').textContent = document.querySelector(`[data-mode="${s.mode}"]`).textContent;
+  $('mShapes').textContent = isGl ? 'per-pixel' : shapes.length.toLocaleString();
+  $('mTime').textContent = (performance.now() - t0).toFixed(0) + 'ms';
+  try { history.replaceState(null, '', '#' + new URLSearchParams(Object.entries(s)).toString()); } catch {}
+}
+
+function draw(ctx, k) {
+  const pal = PALETTES[s.pal];
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const sh of shapes) {
+    ctx.globalAlpha = sh.o; ctx.strokeStyle = sh.color; ctx.lineWidth = sh.w;
+    ctx.beginPath();
+    if (sh.t === 'circle') ctx.arc(sh.x, sh.y, sh.r, 0, Math.PI * 2);
+    else sh.pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if (sh.fill) { ctx.fillStyle = sh.fill; ctx.fill(); }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function toSvg() {
+  const pal = PALETTES[s.pal], f = v => +v.toFixed(1);
+  const body = shapes.map(sh => {
+    const common = `stroke="${sh.color}" stroke-width="${f(sh.w)}" fill="${sh.fill || 'none'}"${sh.o < 1 ? ` opacity="${sh.o.toFixed(2)}"` : ''}`;
+    return sh.t === 'circle'
+      ? `<circle cx="${f(sh.x)}" cy="${f(sh.y)}" r="${f(sh.r)}" ${common}/>`
+      : `<path d="M${sh.pts.map(([x, y]) => `${f(x)} ${f(y)}`).join('L')}" ${common}/>`;
+  }).join('\n');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}" stroke-linecap="round" stroke-linejoin="round">\n<rect width="100%" height="100%" fill="${pal.bg}"/>\n${body}\n</svg>`;
+}
+
+// ─── WebGL shader mode ───
+const FRAG = `precision highp float;
+uniform vec2 res; uniform float seed, chaos, density; uniform vec3 c0, c1, c2, c3, bg;
+float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)) + seed) * 43758.5453); }
+float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
+  return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 6; i++){ v += a*n(p); p *= 2.03; a *= 0.5; } return v; }
+void main(){
+  vec2 uv = gl_FragCoord.xy / res * (1.5 + density * 4.0);
+  vec2 q = vec2(fbm(uv), fbm(uv + 5.2));
+  vec2 r = vec2(fbm(uv + chaos * 4.0 * q + 1.7), fbm(uv + chaos * 4.0 * q + 9.2));
+  float f = fbm(uv + chaos * 4.0 * r);
+  vec3 col = mix(bg, c0, clamp(f*f*2.0, 0.0, 1.0));
+  col = mix(col, c1, clamp(length(q) * 0.8 - 0.3, 0.0, 1.0));
+  col = mix(col, c2, clamp(r.x * r.x, 0.0, 1.0) * 0.7);
+  col = mix(col, c3, smoothstep(0.75, 0.95, f) * 0.6);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+const hexToVec = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+function drawShader(canvas) {
+  const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+  if (!gl) { toast('WebGL is not available in this browser'); return; }
+  if (!gl._prog) {
+    const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}'));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.bindAttribLocation(prog, 0, 'p');
+    gl.linkProgram(prog); gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl._prog = prog;
+  }
+  const u = name => gl.getUniformLocation(gl._prog, name), pal = PALETTES[s.pal];
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(u('res'), canvas.width, canvas.height);
+  gl.uniform1f(u('seed'), makeRng(s.seed)() * 1000);
+  gl.uniform1f(u('chaos'), s.chaos / 100);
+  gl.uniform1f(u('density'), s.density / 100);
+  ['c0', 'c1', 'c2', 'c3'].forEach((k, i) => gl.uniform3fv(u(k), hexToVec(pal.c[i])));
+  gl.uniform3fv(u('bg'), hexToVec(pal.bg));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ─── export ───
+function download(url, name) { const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
+const fileName = ext => `loom-${s.mode}-${s.seed}.${ext}`;
+$('pngBtn').addEventListener('click', () => {
+  const big = document.createElement('canvas'); big.width = big.height = 4000;
+  if (s.mode === 'shader') drawShader(big); else draw(big.getContext('2d'), 4);
+  big.toBlob(b => { download(URL.createObjectURL(b), fileName('png')); toast('PNG exported (4000×4000)'); });
+});
+$('svgBtn').addEventListener('click', () => {
+  download(URL.createObjectURL(new Blob([toSvg()], { type: 'image/svg+xml' })), fileName('svg'));
+  toast(`SVG exported (${shapes.length} vector shapes)`);
+});
+
+// ─── UI ───
+function snapshot() {
+  const src = (s.mode === 'shader' ? $('cgl') : $('c2d'));
+  const t = document.createElement('canvas'); t.width = t.height = 116;
+  t.getContext('2d').drawImage(src, 0, 0, 116, 116);
+  const img = new Image(); img.src = t.toDataURL(); img.alt = `${s.mode} ${s.seed}`;
+  const saved = { ...s };
+  img.onclick = () => { Object.assign(s, saved); syncUi(); generate(); };
+  $('history').prepend(img);
+  while ($('history').children.length > 10) $('history').lastChild.remove();
+}
+function syncUi() {
+  document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === s.mode));
+  document.querySelectorAll('.pal').forEach((b, i) => b.classList.toggle('active', i === +s.pal));
+  ['density', 'chaos', 'stroke'].forEach(k => { $(k).value = s[k]; $(k + 'Out').textContent = s[k]; });
+  $('seed').value = s.seed;
+}
+$('palettes').innerHTML = PALETTES.map((p, i) => `<button class="pal" data-pal="${i}" aria-label="Palette ${i + 1}"><i style="background:${p.bg}"></i>${p.c.map(c => `<i style="background:${c}"></i>`).join('')}</button>`).join('');
+$('modes').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) { s.mode = b.dataset.mode; syncUi(); generate(); } });
+$('palettes').addEventListener('click', e => { const b = e.target.closest('[data-pal]'); if (b) { s.pal = +b.dataset.pal; syncUi(); generate(); } });
+['density', 'chaos', 'stroke'].forEach(k => $(k).addEventListener('input', e => { s[k] = +e.target.value; $(k + 'Out').textContent = s[k]; generate(); }));
+$('seed').addEventListener('change', e => { s.seed = e.target.value.trim().toUpperCase() || newSeed(); syncUi(); generate(); });
+$('randBtn').addEventListener('click', () => { s.seed = newSeed(); syncUi(); generate(); });
+$('genBtn').addEventListener('click', () => { snapshot(); s.seed = newSeed(); syncUi(); generate(); });
+document.addEventListener('keydown', e => { if (e.code === 'Space' && !/INPUT|BUTTON|SELECT/.test(e.target.tagName)) { e.preventDefault(); $('genBtn').click(); } });
+
+// restore settings from a shared link
+const params = new URLSearchParams(location.hash.slice(1));
+for (const k of Object.keys(s)) if (params.has(k)) s[k] = ['density', 'chaos', 'stroke', 'pal'].includes(k) ? +params.get(k) : params.get(k);
+if (!GENERATORS[s.mode] && s.mode !== 'shader') s.mode = 'flow';
+if (!PALETTES[s.pal]) s.pal = 0;
+syncUi(); generate();
+</script>
+</body>
+</html>

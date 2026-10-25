@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#060608"/>
+<title>Flow — Productivity App</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="icon.svg"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../shared.css"/>
+<style>
+.wrap{max-width:720px;margin:0 auto;padding:1.5rem 1.2rem 1rem;}
+.status-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem;}
+.pill{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;padding:.3rem .65rem;border-radius:20px;border:1px solid var(--border2);color:var(--muted2);}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+.pill.ok i{background:var(--a3);box-shadow:0 0 8px var(--a3);}
+.pill.warn i{background:#ffc94d;}
+.pill.bad i{background:var(--a2);}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;}
+.head h1{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;}
+.head p{color:var(--muted2);font-size:.82rem;margin-top:.2rem;}
+.ring{width:58px;height:58px;flex-shrink:0;}
+.add{padding:.8rem;display:grid;grid-template-columns:1fr auto;gap:.6rem;margin-bottom:1rem;}
+.add-opts{grid-column:1/-1;display:flex;gap:.5rem;flex-wrap:wrap;}
+.add-opts .input{width:auto;padding:.45rem .6rem;font-size:.75rem;}
+.lists{display:flex;gap:.4rem;overflow:auto;margin-bottom:.8rem;padding-bottom:.2rem;}
+.list-btn{white-space:nowrap;background:none;border:1px solid var(--border2);color:var(--muted2);padding:.45rem .85rem;border-radius:20px;cursor:pointer;font-size:.75rem;}
+.list-btn.active{border-color:var(--a1);color:var(--a1);background:rgba(0,229,255,.07);}
+.list-btn b{font-family:var(--mono);font-weight:400;opacity:.7;margin-left:.25rem;}
+.filters{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;gap:.6rem;}
+.seg{display:flex;gap:.2rem;}
+.seg button{background:none;border:none;color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:.65rem;padding:.3rem .5rem;border-radius:4px;}
+.seg button.active{color:var(--text);background:var(--card);}
+.task{display:flex;align-items:center;gap:.8rem;padding:.85rem 1rem;margin-bottom:.5rem;transition:opacity .2s,border-color .2s;}
+.task:hover{border-color:var(--border2);}
+.task.done{opacity:.5;}
+.task.done .t-title{text-decoration:line-through;}
+.check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:grid;place-items:center;color:#000;font-size:.7rem;transition:all .2s;}
+.task.done .check{background:var(--a3);border-color:var(--a3);}
+.t-main{flex:1;min-width:0;}
+.t-title{font-size:.9rem;word-wrap:break-word;}
+.t-meta{display:flex;gap:.4rem;margin-top:.3rem;flex-wrap:wrap;}
+.prio-high{color:var(--a2);border-color:rgba(255,61,107,.35);}
+.prio-med{color:#ffc94d;border-color:rgba(255,201,77,.35);}
+.overdue{color:var(--a2);}
+.t-del{background:none;border:none;color:var(--muted);cursor:pointer;opacity:0;transition:opacity .2s;}
+.task:hover .t-del,.t-del:focus{opacity:1;}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;}
+@media(hover:none){.t-del{opacity:1;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="../../index.html#projects" class="back-link">← Portfolio</a>
+  <div class="topbar-title">✅ <span>Flow</span> <span class="demo-badge">Live demo</span></div>
+  <div class="topbar-right"><button class="btn btn-sm" id="installBtn" hidden>⬇ Install app</button></div>
+</header>
+
+<div class="wrap">
+  <div class="status-row">
+    <span class="pill" id="netPill"><i></i><span></span></span>
+    <span class="pill" id="swPill"><i></i><span>Offline cache: checking…</span></span>
+    <span class="pill" id="syncPill"><i></i><span>Sync: this device</span></span>
+    <span class="pill" id="notifPill"><i></i><span>Reminders: off</span></span>
+  </div>
+
+  <div class="head">
+    <div><h1 id="greet">Today</h1><p id="summary"></p></div>
+    <svg class="ring" viewBox="0 0 36 36" aria-hidden="true">
+      <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" stroke-width="4"/>
+      <circle id="ringFill" cx="18" cy="18" r="15" fill="none" stroke="var(--a3)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .5s"/>
+      <text id="ringText" x="18" y="21" text-anchor="middle" font-size="8" font-weight="700" fill="var(--text)">0%</text>
+    </svg>
+  </div>
+
+  <form class="card add" id="addForm">
+    <input class="input" id="title" placeholder="Add a task… e.g. Prepare interview slides" maxlength="140" aria-label="Task title"/>
+    <button class="btn btn-fill" type="submit">Add</button>
+    <div class="add-opts">
+      <select class="input" id="list" aria-label="List"><option>Work</option><option>Personal</option><option>Study</option></select>
+      <select class="input" id="prio" aria-label="Priority"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select>
+      <input class="input" type="datetime-local" id="due" aria-label="Due date"/>
+    </div>
+  </form>
+
+  <div class="lists" id="lists"></div>
+  <div class="filters">
+    <div class="seg" id="seg"><button data-f="all" class="active">All</button><button data-f="active">Active</button><button data-f="done">Done</button></div>
+    <input class="input" id="search" type="search" placeholder="Search" style="max-width:180px;padding:.4rem .7rem;font-size:.75rem" aria-label="Search tasks"/>
+  </div>
+  <div id="tasks"></div>
+
+  <div class="actions">
+    <button class="btn btn-sm" id="notifBtn">🔔 Enable reminders</button>
+    <button class="btn btn-sm" id="clearBtn">Clear completed</button>
+    <button class="btn btn-sm" id="exportBtn">Export JSON</button>
+  </div>
+</div>
+
+<p class="demo-note">Works offline after the first visit and can be installed to your home screen.<br>Open this page in two tabs — changes sync between them instantly.</p>
+
+<script src="../shared.js"></script>
+<script>
+const KEY = 'flow.tasks';
+const $ = id => document.getElementById(id);
+const SEED = [
+  { title: 'Review pull requests', list: 'Work', prio: 'high', due: offset(2) },
+  { title: 'Update portfolio projects', list: 'Work', prio: 'med', due: offset(26) },
+  { title: 'Study JLPT N2 grammar', list: 'Study', prio: 'med', due: '' },
+  { title: 'Grocery shopping', list: 'Personal', prio: 'low', due: '', done: true }
+].map((t, i) => ({ id: 'seed' + i, created: Date.now() - i * 1000, done: false, notified: false, ...t }));
+
+function offset(h) { const d = new Date(Date.now() + h * 3600e3); d.setMinutes(0); return toLocal(d); }
+function toLocal(d) { return new Date(d - d.getTimezoneOffset() * 60e3).toISOString().slice(0, 16); }
+
+let tasks = store.get(KEY, SEED);
+let view = { list: 'All', f: 'all', q: '' };
+
+// cross-tab sync stands in for multi-device sync
+const channel = 'BroadcastChannel' in window ? new BroadcastChannel('flow-sync') : null;
+let peers = 0;
+function save() {
+  store.set(KEY, tasks);
+  channel?.postMessage({ type: 'tasks', tasks });
+}
+if (channel) {
+  channel.onmessage = ({ data }) => {
+    if (data.type === 'tasks') { tasks = data.tasks; render(); flashSync(); }
+    if (data.type === 'hello') { peers++; channel.postMessage({ type: 'here' }); setSync(); }
+    if (data.type === 'here') { peers++; setSync(); }
+    if (data.type === 'bye') { peers = Math.max(0, peers - 1); setSync(); }
+  };
+  channel.postMessage({ type: 'hello' });
+  addEventListener('pagehide', () => channel.postMessage({ type: 'bye' }));
+}
+function setSync() {
+  $('syncPill').className = 'pill ' + (peers ? 'ok' : '');
+  $('syncPill').lastElementChild.textContent = peers ? `Sync: ${peers + 1} sessions connected` : 'Sync: this device';
+}
+function flashSync() { $('syncPill').lastElementChild.textContent = '⟳ Synced just now'; setTimeout(setSync, 1500); }
+
+function render() {
+  const lists = ['All', 'Work', 'Personal', 'Study'];
+  $('lists').innerHTML = lists.map(l => {
+    const n = tasks.filter(t => !t.done && (l === 'All' || t.list === l)).length;
+    return `<button class="list-btn ${view.list === l ? 'active' : ''}" data-l="${l}">${l}<b>${n}</b></button>`;
+  }).join('');
+
+  const shown = tasks
+    .filter(t => view.list === 'All' || t.list === view.list)
+    .filter(t => view.f === 'all' || (view.f === 'done') === t.done)
+    .filter(t => t.title.toLowerCase().includes(view.q.toLowerCase()))
+    .sort((a, b) => a.done - b.done || ({ high: 0, med: 1, low: 2 }[a.prio] - { high: 0, med: 1, low: 2 }[b.prio]) || (a.due || '9').localeCompare(b.due || '9'));
+
+  $('tasks').innerHTML = shown.length ? shown.map(t => {
+    const due = t.due ? new Date(t.due) : null;
+    const late = due && !t.done && due < new Date();
+    return `<div class="card task ${t.done ? 'done' : ''}">
+      <button class="check" data-toggle="${t.id}" aria-label="Toggle done">${t.done ? '✓' : ''}</button>
+      <div class="t-main"><div class="t-title">${esc(t.title)}</div>
+        <div class="t-meta"><span class="tag">${t.list}</span>
+        ${t.prio !== 'low' ? `<span class="tag prio-${t.prio}">${t.prio === 'high' ? '● High' : '● Medium'}</span>` : ''}
+        ${due ? `<span class="tag ${late ? 'overdue' : ''}">${late ? '⚠ ' : '⏰ '}${due.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>` : ''}</div></div>
+      <button class="t-del" data-del="${t.id}" aria-label="Delete task">✕</button></div>`;
+  }).join('') : '<div class="empty">Nothing here — enjoy the calm ✨</div>';
+
+  const total = tasks.length, done = tasks.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  $('ringFill').setAttribute('stroke-dasharray', `${pct * .942} 100`);
+  $('ringText').textContent = pct + '%';
+  const left = total - done;
+  $('summary').textContent = left ? `${left} task${left > 1 ? 's' : ''} left · ${done} completed` : 'All done for now 🎉';
+}
+
+$('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('title').value.trim();
+  if (!title) return $('title').focus();
+  tasks.unshift({ id: Date.now().toString(36), title, list: $('list').value, prio: $('prio').value, due: $('due').value, done: false, notified: false, created: Date.now() });
+  $('title').value = ''; $('due').value = '';
+  save(); render(); toast('Task added');
+});
+$('tasks').addEventListener('click', e => {
+  const tog = e.target.closest('[data-toggle]'), del = e.target.closest('[data-del]');
+  if (tog) { const t = tasks.find(x => x.id === tog.dataset.toggle); t.done = !t.done; save(); render(); }
+  if (del) { tasks = tasks.filter(x => x.id !== del.dataset.del); save(); render(); toast('Task deleted'); }
+});
+$('lists').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if (b) { view.list = b.dataset.l; render(); } });
+$('seg').addEventListener('click', e => {
+  const b = e.target.closest('[data-f]'); if (!b) return;
+  view.f = b.dataset.f; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('active', x === b)); render();
+});
+$('search').addEventListener('input', e => { view.q = e.target.value; render(); });
+$('clearBtn').addEventListener('click', () => { tasks = tasks.filter(t => !t.done); save(); render(); toast('Completed tasks cleared'); });
+$('exportBtn').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }));
+  a.download = 'flow-tasks.json'; a.click(); URL.revokeObjectURL(a.href);
+});
+
+// network status
+function net() {
+  $('netPill').className = 'pill ' + (navigator.onLine ? 'ok' : 'warn');
+  $('netPill').lastElementChild.textContent = navigator.onLine ? 'Online' : 'Offline — changes saved locally';
+}
+addEventListener('online', net); addEventListener('offline', net); net();
+
+// service worker
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    $('swPill').className = 'pill ok'; $('swPill').lastElementChild.textContent = 'Offline ready';
+  }).catch(() => { $('swPill').className = 'pill bad'; $('swPill').lastElementChild.textContent = 'Offline cache unavailable'; });
+} else {
+  $('swPill').className = 'pill warn'; $('swPill').lastElementChild.textContent = 'Offline cache needs https';
+}
+
+// install prompt
+let deferred;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; $('installBtn').hidden = false; });
+$('installBtn').addEventListener('click', async () => { deferred?.prompt(); await deferred?.userChoice; deferred = null; $('installBtn').hidden = true; });
+
+// reminders
+function notifState() {
+  const p = 'Notification' in window ? Notification.permission : 'unsupported';
+  $('notifPill').className = 'pill ' + (p === 'granted' ? 'ok' : p === 'denied' ? 'bad' : '');
+  $('notifPill').lastElementChild.textContent = { granted: 'Reminders: on', denied: 'Reminders: blocked', unsupported: 'Reminders: unsupported' }[p] || 'Reminders: off';
+  $('notifBtn').hidden = p !== 'default';
+}
+$('notifBtn').addEventListener('click', async () => { await Notification.requestPermission(); notifState(); });
+async function checkDue() {
+  const now = new Date();
+  let changed = false;
+  for (const t of tasks) {
+    if (t.done || t.notified || !t.due || new Date(t.due) > now) continue;
+    t.notified = changed = true;
+    toast(`⏰ Due: ${t.title}`);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      reg ? reg.showNotification('Task due', { body: t.title, icon: 'icon.svg', tag: t.id })
+          : new Notification('Task due', { body: t.title, icon: 'icon.svg' });
+    }
+  }
+  if (changed) { save(); render(); }
+}
+notifState();
+setInterval(checkDue, 30e3);
+
+const h = new Date().getHours();
+$('greet').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+render();
+checkDue();
+</script>
+</body>
+</html>

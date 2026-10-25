@@ -141,6 +141,44 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
+// ─── PROJECT CARDS → LIVE DEMOS ───
+document.querySelectorAll('.pcard[data-href]').forEach(card => {
+  card.tabIndex = 0;
+  card.setAttribute('role', 'link');
+  card.setAttribute('aria-label', `Open ${card.querySelector('.pcard-title').textContent} demo`);
+  const open = e => {
+    if (e.target.closest('a')) return; // the GitHub / demo icons handle themselves
+    if (e.ctrlKey || e.metaKey) window.open(card.dataset.href, '_blank');
+    else location.href = card.dataset.href;
+  };
+  card.addEventListener('click', open);
+  card.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
+});
+
+// ─── RESUME DOCS ───
+// if a PDF isn't uploaded, ask visitors to get in touch instead of sending them to a 404
+document.querySelectorAll('.doc-card').forEach(card => {
+  const btns = card.querySelectorAll('.doc-btn');
+  const msg = card.querySelector('.doc-msg');
+  fetch(btns[0].getAttribute('href'), { method: 'HEAD' })
+    .then(res => { if (!res.ok) card.classList.add('doc-missing'); })
+    .catch(() => {}); // e.g. opened from file:// — leave links as they are
+  btns.forEach(btn => btn.addEventListener('click', e => {
+    if (!card.classList.contains('doc-missing')) return;
+    e.preventDefault();
+    const title = card.querySelector('.doc-title').textContent;
+    msg.textContent = `${title} is available on request. Please contact me — `;
+    const email = document.createElement('a');
+    email.href = `mailto:amanecdy@gmail.com?subject=${encodeURIComponent(title + ' request')}`;
+    email.textContent = 'amanecdy@gmail.com';
+    const form = document.createElement('a');
+    form.href = '#contact';
+    form.textContent = 'contact form';
+    msg.append(email, ' or use the ', form, '.');
+    msg.classList.add('show');
+  }));
+});
+
 // ─── CONTACT FORM ───
 const form = document.getElementById('contactForm');
 const formMsg = document.getElementById('formMsg');
@@ -179,9 +217,32 @@ function updateProgress() {
   progressText.textContent = `${done} / ${requiredFields.length}`;
 }
 
+const CONTACT_EMAIL = 'amanecdy@gmail.com';
+
 function showFormMsg(type, text) {
   formMsg.className = `form-msg ${type} show`;
   formMsg.textContent = text;
+}
+
+// fallback when the form service is unavailable: hand the message to the visitor's mail app
+function openMailFallback(data) {
+  const body = [
+    `Name: ${data.get('name')}`,
+    `Email: ${data.get('email')}`,
+    `Phone: ${data.get('phone') || '-'}`,
+    `Topic: ${data.get('topic')}`,
+    '',
+    data.get('message')
+  ].join('\n');
+  const subject = data.get('subject') || `${data.get('topic')} — ${data.get('name')}`;
+  window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  formMsg.className = 'form-msg info show';
+  formMsg.textContent = '✉ Opening your email app with your message. If nothing opens, email me directly at ';
+  const link = document.createElement('a');
+  link.href = `mailto:${CONTACT_EMAIL}`;
+  link.textContent = CONTACT_EMAIL;
+  formMsg.append(link);
 }
 
 // validate on blur, then live once the field has been marked invalid
@@ -208,8 +269,14 @@ form.addEventListener('submit', async e => {
     showFormMsg('error', '⚠ Please fix the highlighted fields.');
     return;
   }
+  const data = new FormData(form);
+  const phone = data.get('phone').trim();
+  data.set('phone', phone ? `${data.get('phone_country')} ${phone}` : '');
+  data.delete('phone_country');
+  data.set('name', `${data.get('first_name').trim()} ${data.get('last_name').trim()}`);
+
   if (form.action.includes('YOUR_FORM_ID')) {
-    showFormMsg('error', '⚠ Form is not configured yet — set your Formspree ID in index.html.');
+    openMailFallback(data);
     return;
   }
 
@@ -217,12 +284,6 @@ form.addEventListener('submit', async e => {
   sendBtn.classList.add('loading');
   sendLabel.textContent = 'Sending...';
   formMsg.className = 'form-msg';
-
-  const data = new FormData(form);
-  const phone = data.get('phone').trim();
-  data.set('phone', phone ? `${data.get('phone_country')} ${phone}` : '');
-  data.delete('phone_country');
-  data.set('name', `${data.get('first_name').trim()} ${data.get('last_name').trim()}`);
 
   try {
     const res = await fetch(form.action, {
@@ -246,7 +307,7 @@ form.addEventListener('submit', async e => {
   } catch {
     sendBtn.disabled = false;
     sendLabel.textContent = 'Send Message →';
-    showFormMsg('error', '⚠ Something went wrong. Please try again or contact me directly.');
+    openMailFallback(data);
   } finally {
     sendBtn.classList.remove('loading');
   }

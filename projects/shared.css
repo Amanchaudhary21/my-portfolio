@@ -1,0 +1,92 @@
+/* Shared look for all portfolio demo projects */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#060608;
+  --bg2:#0d0d12;
+  --card:#111118;
+  --card2:#16161f;
+  --border:#1e1e2e;
+  --border2:#2a2a3f;
+  --a1:#00e5ff;
+  --a2:#ff3d6b;
+  --a3:#b8ff57;
+  --text:#f0f0f8;
+  --muted:#5a5a7a;
+  --muted2:#8080a8;
+  --r:10px;
+  --font:'Space Grotesk',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;}
+a{color:var(--a1);}
+button,input,select,textarea{font:inherit;color:inherit;}
+
+/* ─── TOP BAR ─── */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:1rem;padding:.9rem 2rem;
+  background:rgba(6,6,8,.85);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.back-link{
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-decoration:none;
+  color:var(--muted2);padding:.45rem .8rem;border:1px solid var(--border2);border-radius:5px;
+  transition:color .2s,border-color .2s;white-space:nowrap;
+}
+.back-link:hover{color:var(--a1);border-color:var(--a1);}
+.topbar-title{font-weight:800;font-size:1rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.5rem;min-width:0;}
+.topbar-title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.demo-badge{
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:.2rem .5rem;border-radius:3px;color:var(--a3);
+  background:rgba(184,255,87,.08);border:1px solid rgba(184,255,87,.25);white-space:nowrap;
+}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:.6rem;}
+
+/* ─── COMMON UI ─── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.4rem;
+  padding:.65rem 1.1rem;border-radius:6px;border:1px solid var(--border2);
+  background:transparent;color:var(--text);cursor:pointer;text-decoration:none;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;
+  transition:border-color .2s,color .2s,background .2s,transform .2s,box-shadow .2s;
+}
+.btn:hover{border-color:var(--a1);color:var(--a1);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-fill{background:var(--a1);border-color:var(--a1);color:#000;font-weight:700;}
+.btn-fill:hover{color:#000;transform:translateY(-1px);box-shadow:0 0 24px rgba(0,229,255,.3);}
+.btn-danger:hover{border-color:var(--a2);color:var(--a2);}
+.btn-sm{padding:.4rem .7rem;font-size:.65rem;}
+.input{
+  width:100%;padding:.7rem .9rem;border-radius:6px;
+  background:var(--bg);border:1px solid var(--border2);color:var(--text);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.input:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+.input::placeholder{color:var(--muted);}
+.label{display:block;font-family:var(--mono);font-size:.6rem;color:var(--muted2);letter-spacing:.14em;text-transform:uppercase;margin-bottom:.45rem;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);}
+.muted{color:var(--muted2);}
+.mono{font-family:var(--mono);}
+.tag{
+  display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;
+  padding:.2rem .55rem;border-radius:20px;border:1px solid var(--border2);color:var(--muted2);
+}
+.toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translate(-50%,150%);z-index:200;
+  padding:.8rem 1.2rem;border-radius:8px;background:var(--card2);border:1px solid var(--a1);
+  font-family:var(--mono);font-size:.72rem;box-shadow:0 20px 50px rgba(0,0,0,.5);
+  transition:transform .35s cubic-bezier(.22,1,.36,1);max-width:calc(100% - 2rem);
+}
+.toast.show{transform:translate(-50%,0);}
+.demo-note{
+  font-family:var(--mono);font-size:.62rem;color:var(--muted);line-height:1.7;
+  padding:1rem 2rem 2rem;text-align:center;
+}
+.empty{padding:2.5rem 1rem;text-align:center;color:var(--muted);font-family:var(--mono);font-size:.75rem;}
+
+@media(max-width:640px){
+  .topbar{padding:.75rem 1rem;}
+  .demo-badge{display:none;}
+}

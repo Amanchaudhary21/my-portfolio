@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sentinel — Auth System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../shared.css"/>
+<style>
+.wrap{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 1rem;}
+.auth-box{max-width:420px;margin:3vh auto 0;padding:2rem;}
+.auth-box h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;}
+.auth-box > p{color:var(--muted2);font-size:.85rem;margin:.3rem 0 1.5rem;}
+.field{margin-bottom:1rem;}
+.oauth{width:100%;margin-bottom:1rem;}
+.or{display:flex;align-items:center;gap:.8rem;color:var(--muted);font-family:var(--mono);font-size:.6rem;margin:1rem 0;}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--border);}
+.err{color:var(--a2);font-family:var(--mono);font-size:.68rem;min-height:1.1em;margin:.3rem 0 .8rem;}
+.switch{text-align:center;font-size:.8rem;color:var(--muted2);margin-top:1.2rem;}
+.switch a{cursor:pointer;}
+.meter{height:4px;border-radius:2px;background:var(--border);margin-top:.5rem;overflow:hidden;}
+.meter div{height:100%;width:0;transition:width .3s,background .3s;}
+.meter-text{font-family:var(--mono);font-size:.6rem;color:var(--muted2);margin-top:.3rem;}
+.demo-creds{font-family:var(--mono);font-size:.62rem;color:var(--muted2);background:var(--bg);border:1px dashed var(--border2);border-radius:6px;padding:.7rem .8rem;margin-top:1.2rem;line-height:1.8;}
+.demo-creds b{color:var(--a1);font-weight:500;}
+.otp{display:flex;gap:.5rem;justify-content:center;margin:1.2rem 0 .4rem;}
+.otp input{width:46px;height:54px;text-align:center;font-size:1.3rem;font-family:var(--mono);padding:0;}
+.secret{font-family:var(--mono);font-size:.78rem;word-break:break-all;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:.7rem;margin:.6rem 0;color:var(--a3);}
+.live-code{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--muted2);margin-top:.8rem;}
+.live-code b{color:var(--text);font-size:1rem;letter-spacing:.2em;}
+
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.panel{padding:1.4rem;min-width:0;}
+.panel h2{font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:.6rem;}
+.full{grid-column:1/-1;}
+.hello{display:flex;align-items:center;gap:1rem;}
+.av{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#2e0d1a,#6b0a3d);}
+.role{color:var(--a1);border-color:rgba(0,229,255,.35);}
+.role.admin{color:var(--a2);border-color:rgba(255,61,107,.35);}
+.jwt{font-family:var(--mono);font-size:.68rem;word-break:break-all;line-height:1.6;background:var(--bg);border-radius:6px;padding:.8rem;border:1px solid var(--border);}
+.jwt .h{color:var(--a2);}.jwt .p{color:#a78bfa;}.jwt .s{color:var(--a1);}
+pre{font-family:var(--mono);font-size:.7rem;line-height:1.6;background:var(--bg);border-radius:6px;padding:.8rem;border:1px solid var(--border);overflow:auto;color:#d6d6e8;}
+.kv{display:flex;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.82rem;gap:1rem;}
+.kv span:last-child{font-family:var(--mono);font-size:.75rem;}
+.ok{color:var(--a3);}.bad{color:var(--a2);}
+table{width:100%;border-collapse:collapse;font-size:.8rem;}
+th{text-align:left;font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);padding:.6rem;border-bottom:1px solid var(--border);}
+td{padding:.6rem;border-bottom:1px solid var(--border);}
+td select{width:auto;padding:.3rem .5rem;font-size:.72rem;}
+.locked{text-align:center;padding:2rem 1rem;}
+.locked b{display:block;font-size:2rem;color:var(--a2);font-family:var(--mono);}
+.log{max-height:200px;overflow:auto;font-family:var(--mono);font-size:.66rem;line-height:1.9;color:var(--muted2);}
+.log span{color:var(--muted);}
+.consent{max-width:400px;margin:6vh auto 0;padding:2rem;text-align:center;}
+.consent .apps{display:flex;justify-content:center;align-items:center;gap:1rem;font-size:2rem;margin-bottom:1rem;}
+.consent ul{text-align:left;margin:1rem 0 1.5rem 1.2rem;font-size:.85rem;color:var(--muted2);line-height:1.9;}
+@media(max-width:760px){.dash{grid-template-columns:1fr;}.auth-box{padding:1.5rem;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="../../index.html#projects" class="back-link">← Portfolio</a>
+  <div class="topbar-title">🔐 <span>Sentinel Auth</span> <span class="demo-badge">Live demo</span></div>
+  <div class="topbar-right" id="topRight"></div>
+</header>
+
+<div class="wrap" id="app"></div>
+<p class="demo-note">Demo build — passwords are hashed with PBKDF2 (100k rounds), sessions are HS256-signed JWTs and 2FA uses real TOTP (RFC 6238), all via the Web Crypto API.<br>In production these run server-side on Node.js + PostgreSQL; here they run in your browser so the demo works on static hosting.</p>
+
+<script src="../shared.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const enc = new TextEncoder();
+const app = $('app');
+
+// ─── crypto helpers ───
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64urlJson = obj => b64url(enc.encode(JSON.stringify(obj)));
+const fromB64url = s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/')))));
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const rand = n => crypto.getRandomValues(new Uint8Array(n));
+
+async function hashPassword(pw, saltHex) {
+  const salt = saltHex ? Uint8Array.from(saltHex.match(/../g), h => parseInt(h, 16)) : rand(16);
+  const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, key, 256);
+  return { salt: hex(salt), hash: hex(bits) };
+}
+
+let secretKey;
+async function jwtKey() {
+  if (secretKey) return secretKey;
+  let raw = store.get('auth.secret');
+  if (!raw) { raw = hex(rand(32)); store.set('auth.secret', raw); }
+  secretKey = await crypto.subtle.importKey('raw', Uint8Array.from(raw.match(/../g), h => parseInt(h, 16)), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+  return secretKey;
+}
+async function signJwt(payload) {
+  const head = b64urlJson({ alg: 'HS256', typ: 'JWT' }), body = b64urlJson(payload);
+  const sig = await crypto.subtle.sign('HMAC', await jwtKey(), enc.encode(`${head}.${body}`));
+  return `${head}.${body}.${b64url(sig)}`;
+}
+async function verifyJwt(token) {
+  try {
+    const [h, p, s] = token.split('.');
+    const sig = Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    const ok = await crypto.subtle.verify('HMAC', await jwtKey(), sig, enc.encode(`${h}.${p}`));
+    const payload = fromB64url(p);
+    if (!ok) return { error: 'Invalid signature' };
+    if (payload.exp * 1000 < Date.now()) return { error: 'Token expired' };
+    return { payload };
+  } catch { return { error: 'Malformed token' }; }
+}
+
+// TOTP (RFC 6238) — compatible with Google Authenticator / Authy
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32encode(bytes) {
+  let bits = '', out = '';
+  bytes.forEach(b => bits += b.toString(2).padStart(8, '0'));
+  for (let i = 0; i + 5 <= bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
+}
+function b32decode(str) {
+  let bits = '';
+  for (const c of str) bits += B32.indexOf(c).toString(2).padStart(5, '0');
+  return Uint8Array.from(bits.match(/.{8}/g), b => parseInt(b, 2));
+}
+async function totp(secret, step = 0) {
+  const counter = Math.floor(Date.now() / 30000) + step;
+  const buf = new ArrayBuffer(8);
+  new DataView(buf).setUint32(4, counter);
+  const key = await crypto.subtle.importKey('raw', b32decode(secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+  const h = new Uint8Array(await crypto.subtle.sign('HMAC', key, buf));
+  const o = h[19] & 15;
+  return String((((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1e6).padStart(6, '0');
+}
+async function verifyTotp(secret, code) {
+  for (const s of [-1, 0, 1]) if (await totp(secret, s) === code) return true;
+  return false;
+}
+
+// ─── state ───
+let users = store.get('auth.users', null);
+let audit = store.get('auth.audit', []);
+let attempts = store.get('auth.attempts', {});
+let session = null, pending = null, timer = null;
+
+function log(msg) { audit.unshift({ t: Date.now(), msg }); audit = audit.slice(0, 50); store.set('auth.audit', audit); }
+function saveUsers() { store.set('auth.users', users); }
+
+async function seed() {
+  if (users) return;
+  users = [
+    { id: 'u1', name: 'Admin', email: 'admin@demo.com', role: 'admin', ...(await hashPassword('Admin@123')), totp: null, provider: 'password', created: Date.now() },
+    { id: 'u2', name: 'Demo User', email: 'user@demo.com', role: 'user', ...(await hashPassword('User@1234')), totp: null, provider: 'password', created: Date.now() }
+  ];
+  saveUsers();
+}
+
+function strength(pw) {
+  let s = 0;
+  if (pw.length >= 8) s++; if (pw.length >= 12) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return s;
+}
+
+// ─── views ───
+function viewLogin(msg = '') {
+  clearInterval(timer);
+  $('topRight').innerHTML = '';
+  app.innerHTML = `
+  <form class="card auth-box" id="loginForm" novalidate>
+    <h1>Welcome back</h1><p>Sign in to your account</p>
+    <button type="button" class="btn oauth" id="oauthBtn">⎔ Continue with GitHub (OAuth2)</button>
+    <div class="or">OR</div>
+    <div class="field"><label class="label" for="email">Email</label><input class="input" id="email" type="email" autocomplete="username" placeholder="you@example.com"/></div>
+    <div class="field"><label class="label" for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••"/></div>
+    <div class="err" id="err">${msg}</div>
+    <button class="btn btn-fill" style="width:100%" id="loginBtn">Sign in</button>
+    <div class="switch">No account? <a id="toSignup">Create one</a></div>
+    <div class="demo-creds">Demo accounts<br>Admin · <b>admin@demo.com</b> / <b>Admin@123</b><br>User &nbsp;· <b>user@demo.com</b> / <b>User@1234</b></div>
+  </form>`;
+  $('toSignup').onclick = viewSignup;
+  $('oauthBtn').onclick = viewConsent;
+  $('loginForm').onsubmit = async e => {
+    e.preventDefault();
+    const email = $('email').value.trim().toLowerCase(), pw = $('pw').value;
+    const a = attempts[email] || { n: 0, until: 0 };
+    if (a.until > Date.now()) return $('err').textContent = `Too many attempts. Try again in ${Math.ceil((a.until - Date.now()) / 1000)}s.`;
+    $('loginBtn').disabled = true; $('loginBtn').textContent = 'Verifying...';
+    const u = users.find(x => x.email === email);
+    const ok = u && u.hash && (await hashPassword(pw, u.salt)).hash === u.hash;
+    $('loginBtn').disabled = false; $('loginBtn').textContent = 'Sign in';
+    if (!ok) {
+      a.n++; if (a.n >= 5) { a.until = Date.now() + 30000; a.n = 0; log(`🔒 ${email} locked for 30s (5 failed attempts)`); }
+      attempts[email] = a; store.set('auth.attempts', attempts);
+      log(`✕ Failed login for ${email || '(empty)'}`);
+      return $('err').textContent = a.until > Date.now() ? 'Account locked for 30 seconds after 5 failed attempts.' : `Invalid email or password. (${5 - a.n} tries left)`;
+    }
+    delete attempts[email]; store.set('auth.attempts', attempts);
+    if (u.totp) { pending = u; return view2fa(); }
+    issue(u);
+  };
+}
+
+function viewSignup() {
+  app.innerHTML = `
+  <form class="card auth-box" id="signupForm" novalidate>
+    <h1>Create account</h1><p>New accounts get the <b>user</b> role</p>
+    <div class="field"><label class="label" for="name">Name</label><input class="input" id="name" placeholder="Taro Yamada" autocomplete="name"/></div>
+    <div class="field"><label class="label" for="email">Email</label><input class="input" id="email" type="email" placeholder="you@gmail.com" autocomplete="email"/></div>
+    <div class="field"><label class="label" for="pw">Password</label><input class="input" id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>
+      <div class="meter"><div id="meter"></div></div><div class="meter-text" id="meterText">Use 8+ chars with upper, lower, number & symbol</div></div>
+    <div class="err" id="err"></div>
+    <button class="btn btn-fill" style="width:100%">Create account</button>
+    <div class="switch">Already registered? <a id="toLogin">Sign in</a></div>
+  </form>`;
+  $('toLogin').onclick = () => viewLogin();
+  $('pw').oninput = () => {
+    const s = strength($('pw').value);
+    $('meter').style.width = s * 20 + '%';
+    $('meter').style.background = ['var(--a2)', 'var(--a2)', '#ffc94d', '#ffc94d', 'var(--a3)', 'var(--a3)'][s];
+    $('meterText').textContent = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'][s];
+  };
+  $('signupForm').onsubmit = async e => {
+    e.preventDefault();
+    const name = $('name').value.trim(), email = $('email').value.trim().toLowerCase(), pw = $('pw').value;
+    let msg = '';
+    if (!name) msg = 'Please enter your name.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) msg = 'Please enter a valid email.';
+    else if (users.some(u => u.email === email)) msg = 'An account with this email already exists.';
+    else if (strength(pw) < 3) msg = 'Password is too weak — mix upper/lowercase, numbers and symbols.';
+    if (msg) return $('err').textContent = msg;
+    const u = { id: 'u' + Date.now().toString(36), name, email, role: 'user', ...(await hashPassword(pw)), totp: null, provider: 'password', created: Date.now() };
+    users.push(u); saveUsers(); log(`＋ New account ${email}`);
+    toast('Account created'); issue(u);
+  };
+}
+
+function viewConsent() {
+  app.innerHTML = `
+  <div class="card consent">
+    <div class="apps">⎔ <span class="muted" style="font-size:1rem">⇄</span> 🔐</div>
+    <h1 style="font-size:1.2rem">Authorize Sentinel</h1>
+    <p class="muted" style="font-size:.82rem;margin-top:.3rem">Simulated GitHub OAuth2 consent screen</p>
+    <ul><li>Read your public profile</li><li>Read your email address</li></ul>
+    <div style="display:flex;gap:.6rem"><button class="btn" style="flex:1" id="deny">Cancel</button><button class="btn btn-fill" style="flex:1" id="allow">Authorize</button></div>
+  </div>`;
+  $('deny').onclick = () => viewLogin('OAuth authorization was cancelled.');
+  $('allow').onclick = () => {
+    // authorization-code flow: code → token exchange → profile
+    const code = hex(rand(8));
+    log(`⎔ OAuth2 code issued (${code.slice(0, 6)}…) and exchanged for access token`);
+    let u = users.find(x => x.email === 'octocat@github.demo');
+    if (!u) { u = { id: 'u' + Date.now().toString(36), name: 'Octo Cat', email: 'octocat@github.demo', role: 'user', totp: null, provider: 'github', created: Date.now() }; users.push(u); saveUsers(); }
+    issue(u);
+  };
+}
+
+function view2fa() {
+  app.innerHTML = `
+  <form class="card auth-box" id="otpForm">
+    <h1>Two-factor check</h1><p>Enter the 6-digit code from your authenticator app</p>
+    <div class="otp">${'<input class="input" maxlength="1" inputmode="numeric" aria-label="Digit"/>'.repeat(6)}</div>
+    <div class="err" id="err" style="text-align:center"></div>
+    <button class="btn btn-fill" style="width:100%">Verify</button>
+    <div class="switch"><a id="cancel">← Back to sign in</a></div>
+  </form>`;
+  const boxes = [...app.querySelectorAll('.otp input')];
+  boxes[0].focus();
+  boxes.forEach((b, i) => {
+    b.oninput = () => { b.value = b.value.replace(/\D/g, ''); if (b.value && boxes[i + 1]) boxes[i + 1].focus(); };
+    b.onkeydown = e => { if (e.key === 'Backspace' && !b.value && boxes[i - 1]) boxes[i - 1].focus(); };
+    b.onpaste = e => { const d = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6); d.split('').forEach((c, j) => boxes[j].value = c); e.preventDefault(); };
+  });
+  $('cancel').onclick = () => { pending = null; viewLogin(); };
+  $('otpForm').onsubmit = async e => {
+    e.preventDefault();
+    const code = boxes.map(b => b.value).join('');
+    if (await verifyTotp(pending.totp, code)) { log(`✓ 2FA passed for ${pending.email}`); issue(pending); pending = null; }
+    else { log(`✕ Wrong 2FA code for ${pending.email}`); $('err').textContent = 'Invalid code — check your authenticator.'; boxes.forEach(b => b.value = ''); boxes[0].focus(); }
+  };
+}
+
+async function issue(u) {
+  const now = Math.floor(Date.now() / 1000);
+  const token = await signJwt({ sub: u.id, email: u.email, name: u.name, role: u.role, amr: u.totp ? ['pwd', 'otp'] : [u.provider === 'github' ? 'oauth' : 'pwd'], iat: now, exp: now + 15 * 60 });
+  sessionStorage.setItem('auth.token', token);
+  log(`✓ ${u.email} signed in · JWT issued`);
+  loadSession();
+}
+
+async function loadSession() {
+  const token = sessionStorage.getItem('auth.token');
+  if (!token) return viewLogin();
+  const { payload, error } = await verifyJwt(token);
+  if (error) { sessionStorage.removeItem('auth.token'); return viewLogin(error === 'Token expired' ? 'Your session expired — please sign in again.' : ''); }
+  session = { token, payload, user: users.find(u => u.id === payload.sub) };
+  if (!session.user) { sessionStorage.removeItem('auth.token'); return viewLogin(); }
+  viewDash();
+}
+
+function logout(msg) { log(`⏻ ${session?.payload.email} signed out`); sessionStorage.removeItem('auth.token'); session = null; viewLogin(msg); }
+
+function viewDash() {
+  const { payload: p, token, user } = session;
+  const [h, b, s] = token.split('.');
+  $('topRight').innerHTML = `<button class="btn btn-sm" id="logoutBtn">Sign out</button>`;
+  $('logoutBtn').onclick = () => logout();
+  app.innerHTML = `
+  <div class="dash">
+    <div class="card panel full hello">
+      <div class="av">${esc(user.name[0].toUpperCase())}</div>
+      <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:1.2rem">Hi, ${esc(user.name)}</div>
+      <div class="muted" style="font-size:.8rem">${esc(user.email)} · signed in via ${p.amr.join(' + ')}</div></div>
+      <span class="tag role ${p.role}">${p.role.toUpperCase()}</span>
+    </div>
+    <div class="card panel">
+      <h2>Session <span class="tag" id="ttl"></span></h2>
+      <div class="kv"><span>Signature</span><span class="ok">✓ HS256 valid</span></div>
+      <div class="kv"><span>Issued</span><span>${new Date(p.iat * 1000).toLocaleTimeString()}</span></div>
+      <div class="kv"><span>Expires</span><span>${new Date(p.exp * 1000).toLocaleTimeString()}</span></div>
+      <div class="kv"><span>2FA</span><span class="${user.totp ? 'ok' : 'bad'}">${user.totp ? 'Enabled' : 'Disabled'}</span></div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">
+        <button class="btn btn-sm" id="refreshBtn">↻ Refresh token</button>
+        <button class="btn btn-sm btn-danger" id="tamperBtn">⚠ Tamper token</button>
+      </div>
+    </div>
+    <div class="card panel" id="tfaPanel"></div>
+    <div class="card panel full">
+      <h2>Your JWT</h2>
+      <div class="jwt"><span class="h">${h}</span>.<span class="p">${b}</span>.<span class="s">${s}</span></div>
+      <div class="label" style="margin-top:1rem">Decoded payload</div>
+      <pre>${esc(JSON.stringify(p, null, 2))}</pre>
+    </div>
+    <div class="card panel full" id="adminPanel"></div>
+    <div class="card panel full"><h2>Audit log</h2><div class="log" id="log"></div></div>
+  </div>`;
+
+  $('refreshBtn').onclick = () => { issue(user); toast('New token issued'); };
+  $('tamperBtn').onclick = async () => {
+    // flip the role claim without re-signing — verification must reject it
+    const forged = `${h}.${b64urlJson({ ...p, role: 'admin' })}.${s}`;
+    const r = await verifyJwt(forged);
+    log(`⚠ Tampered token rejected: ${r.error}`);
+    toast(`Forged "admin" token rejected — ${r.error}`); renderLog();
+  };
+  render2fa(); renderAdmin(); renderLog();
+  clearInterval(timer);
+  timer = setInterval(() => {
+    const left = p.exp * 1000 - Date.now();
+    if (left <= 0) return logout('Your session expired — please sign in again.');
+    $('ttl').textContent = `expires in ${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}`;
+  }, 1000);
+}
+
+let tickGen = 0;
+function render2fa(setupSecret) {
+  const user = session.user, el = $('tfaPanel'), gen = ++tickGen;
+  if (user.totp) {
+    el.innerHTML = `<h2>Two-factor auth <span class="tag ok">ON</span></h2><p class="muted" style="font-size:.82rem;line-height:1.7">Your account asks for a 6-digit code at every sign-in.</p>
+      <div class="live-code">Current code (demo helper) <b id="liveCode">------</b></div>
+      <button class="btn btn-sm btn-danger" style="margin-top:1rem" id="off2fa">Disable 2FA</button>`;
+    $('off2fa').onclick = () => { user.totp = null; saveUsers(); log(`2FA disabled for ${user.email}`); render2fa(); renderLog(); };
+    const tick = async () => { if (gen === tickGen && $('liveCode')) { $('liveCode').textContent = await totp(user.totp); setTimeout(tick, 1000); } };
+    tick();
+  } else if (setupSecret) {
+    el.innerHTML = `<h2>Set up 2FA</h2><p class="muted" style="font-size:.8rem;line-height:1.7">Add this key to Google Authenticator / Authy (“Enter a setup key”, time-based), then enter the code.</p>
+      <div class="secret">${setupSecret.match(/.{4}/g).join(' ')}</div>
+      <div class="live-code">Or use the demo helper <b id="liveCode">------</b></div>
+      <div style="display:flex;gap:.5rem;margin-top:1rem"><input class="input" id="setupCode" maxlength="6" inputmode="numeric" placeholder="123456"/><button class="btn btn-fill" id="confirm2fa">Verify</button></div>
+      <div class="err" id="tfaErr"></div>`;
+    const tick = async () => { if (gen === tickGen && $('liveCode') && !user.totp) { $('liveCode').textContent = await totp(setupSecret); setTimeout(tick, 1000); } };
+    tick();
+    $('confirm2fa').onclick = async () => {
+      if (await verifyTotp(setupSecret, $('setupCode').value.trim())) {
+        user.totp = setupSecret; saveUsers(); log(`✓ 2FA enabled for ${user.email}`); toast('2FA enabled'); viewDash();
+      } else $('tfaErr').textContent = 'Code does not match. Try again.';
+    };
+  } else {
+    el.innerHTML = `<h2>Two-factor auth <span class="tag bad">OFF</span></h2><p class="muted" style="font-size:.82rem;line-height:1.7">Protect your account with a time-based one-time password (TOTP).</p>
+      <button class="btn btn-fill btn-sm" style="margin-top:1rem" id="on2fa">Enable 2FA</button>`;
+    $('on2fa').onclick = () => render2fa(b32encode(rand(20)));
+  }
+}
+
+function renderAdmin() {
+  const el = $('adminPanel');
+  if (session.payload.role !== 'admin') {
+    el.innerHTML = `<div class="locked"><b>403</b><div style="font-weight:700;margin:.4rem 0">Admin area — access denied</div>
+      <p class="muted" style="font-size:.8rem">Your token's role claim is <span class="mono">"user"</span>. Sign in as admin@demo.com to manage users.</p></div>`;
+    return;
+  }
+  el.innerHTML = `<h2>User management <span class="tag">${users.length} users</span></h2><div style="overflow:auto"><table>
+    <thead><tr><th>User</th><th>Provider</th><th>2FA</th><th>Role</th><th></th></tr></thead><tbody>
+    ${users.map(u => `<tr><td>${esc(u.name)}<div class="muted mono" style="font-size:.65rem">${esc(u.email)}</div></td>
+      <td><span class="tag">${u.provider}</span></td><td class="${u.totp ? 'ok' : 'muted'}">${u.totp ? 'On' : 'Off'}</td>
+      <td><select class="input" data-role="${u.id}" ${u.id === session.user.id ? 'disabled' : ''}><option ${u.role === 'user' ? 'selected' : ''}>user</option><option ${u.role === 'admin' ? 'selected' : ''}>admin</option></select></td>
+      <td>${u.id === session.user.id ? '<span class="muted">you</span>' : `<button class="btn btn-sm btn-danger" data-delu="${u.id}">Delete</button>`}</td></tr>`).join('')}
+    </tbody></table></div>
+    <button class="btn btn-sm btn-danger" style="margin-top:1rem" id="resetAll">Reset demo data</button>`;
+  el.onchange = e => {
+    const id = e.target.dataset.role; if (!id) return;
+    const u = users.find(x => x.id === id); u.role = e.target.value; saveUsers();
+    log(`★ ${u.email} role → ${u.role} (applies on next token)`); toast('Role updated — takes effect at next sign-in'); renderLog();
+  };
+  el.onclick = e => {
+    const id = e.target.dataset.delu;
+    if (id && confirm('Delete this user?')) { const u = users.find(x => x.id === id); users = users.filter(x => x.id !== id); saveUsers(); log(`✕ Deleted ${u.email}`); renderAdmin(); renderLog(); }
+    if (e.target.id === 'resetAll' && confirm('Reset all users and logs?')) {
+      ['auth.users', 'auth.audit', 'auth.attempts'].forEach(k => localStorage.removeItem(k));
+      sessionStorage.removeItem('auth.token'); location.reload();
+    }
+  };
+}
+
+function renderLog() {
+  if (!$('log')) return;
+  $('log').innerHTML = audit.map(a => `<div><span>${new Date(a.t).toLocaleTimeString()}</span> ${esc(a.msg)}</div>`).join('') || 'No events yet';
+}
+
+(async () => {
+  if (!crypto.subtle) { app.innerHTML = '<div class="empty">This demo needs a secure context (https or localhost) for the Web Crypto API.</div>'; return; }
+  app.innerHTML = '<div class="empty">Starting…</div>';
+  await seed();
+  loadSession();
+})();
+</script>
+</body>
+</html>

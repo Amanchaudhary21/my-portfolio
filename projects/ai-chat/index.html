@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Aria — AI Chat App</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../shared.css"/>
+<style>
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+.app{flex:1;display:grid;grid-template-columns:260px 1fr;min-height:0;}
+.side{border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;min-height:0;}
+.side-top{padding:1rem;}
+.side-top .btn{width:100%;}
+.chats{flex:1;overflow:auto;padding:0 .6rem;}
+.chat-item{display:flex;align-items:center;gap:.4rem;padding:.6rem .7rem;border-radius:6px;cursor:pointer;font-size:.82rem;color:var(--muted2);margin-bottom:.15rem;}
+.chat-item:hover{background:var(--card);}
+.chat-item.active{background:var(--card);color:var(--text);}
+.chat-item span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-item button{background:none;border:none;color:var(--muted);cursor:pointer;opacity:0;font-size:.75rem;}
+.chat-item:hover button{opacity:1;}
+.side-foot{padding:1rem;border-top:1px solid var(--border);}
+.lang{display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;}
+.lang button{flex:1;background:none;border:none;color:var(--muted2);padding:.45rem;cursor:pointer;font-family:var(--mono);font-size:.68rem;}
+.lang button.active{background:rgba(0,229,255,.1);color:var(--a1);}
+
+.main{display:flex;flex-direction:column;min-height:0;min-width:0;}
+.msgs{flex:1;overflow:auto;padding:2rem 1.5rem;}
+.msg{max-width:760px;margin:0 auto 1.4rem;display:flex;gap:.8rem;}
+.avatar{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;font-size:.95rem;}
+.msg.bot .avatar{background:linear-gradient(135deg,#0d2e1a,#0a6b3d);}
+.msg.user .avatar{background:var(--border2);}
+.bubble{line-height:1.7;font-size:.92rem;white-space:pre-wrap;word-wrap:break-word;min-width:0;padding-top:.25rem;}
+.msg.user .bubble{color:var(--text);}
+.msg.bot .bubble{color:#d6d6e8;}
+.cursor{display:inline-block;width:7px;height:1em;background:var(--a1);vertical-align:text-bottom;animation:blink 1s steps(1) infinite;margin-left:1px;}
+@keyframes blink{50%{opacity:0;}}
+.welcome{max-width:640px;margin:8vh auto 0;text-align:center;}
+.welcome .logo{font-size:2.6rem;}
+.welcome h1{font-size:1.8rem;font-weight:800;margin:.6rem 0 .4rem;letter-spacing:-.02em;}
+.suggest{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.8rem;text-align:left;}
+.suggest button{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.9rem 1rem;color:var(--text);cursor:pointer;font-size:.82rem;transition:border-color .2s;}
+.suggest button:hover{border-color:var(--a1);}
+.suggest small{display:block;color:var(--muted2);margin-top:.2rem;font-size:.72rem;}
+
+.composer{padding:1rem 1.5rem 1.2rem;}
+.box{max-width:760px;margin:0 auto;display:flex;gap:.6rem;align-items:flex-end;background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:.6rem;}
+.box:focus-within{border-color:var(--a1);}
+.box textarea{flex:1;background:none;border:none;outline:none;resize:none;max-height:160px;padding:.45rem .5rem;line-height:1.5;}
+.hint{max-width:760px;margin:.5rem auto 0;font-family:var(--mono);font-size:.58rem;color:var(--muted);text-align:center;}
+.menu-btn{display:none;}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr;}
+  .side{position:fixed;top:0;bottom:0;left:0;width:260px;z-index:80;transform:translateX(-100%);transition:transform .3s;}
+  .side.open{transform:none;}
+  .menu-btn{display:inline-flex;}
+  .suggest{grid-template-columns:1fr;}
+  .msgs{padding:1.2rem 1rem;}
+  .composer{padding:.8rem 1rem 1rem;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="btn btn-sm menu-btn" id="menuBtn" aria-label="Chats">☰</button>
+  <a href="../../index.html#projects" class="back-link">← Portfolio</a>
+  <div class="topbar-title">🤖 <span>Aria AI</span> <span class="demo-badge">Live demo</span></div>
+</header>
+
+<div class="app">
+  <aside class="side" id="side">
+    <div class="side-top"><button class="btn btn-fill" id="newChat">+ New chat</button></div>
+    <div class="chats" id="chats"></div>
+    <div class="side-foot">
+      <div class="label">Language</div>
+      <div class="lang" id="lang"><button data-lang="en">English</button><button data-lang="ja">日本語</button></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="msgs" id="msgs"></div>
+    <div class="composer">
+      <form class="box" id="form">
+        <textarea id="input" rows="1" placeholder="Message Aria..." aria-label="Message"></textarea>
+        <button class="btn btn-fill btn-sm" id="sendBtn" type="submit">Send ↑</button>
+      </form>
+      <div class="hint" id="hint">Enter to send · Shift+Enter for new line · Demo assistant runs locally in your browser</div>
+    </div>
+  </main>
+</div>
+
+<script src="../shared.js"></script>
+<script>
+const T = {
+  en: {
+    hello: 'How can I help you today?', sub: 'Ask me about Aman, his skills, projects — or just chat.',
+    placeholder: 'Message Aria...', newChat: 'New chat', stop: 'Stop',
+    suggest: [['Who is Aman?', 'Background & experience'], ['What tech does he use?', 'Skills & stack'], ['Show me his projects', 'Portfolio overview'], ['How can I hire him?', 'Contact & availability']]
+  },
+  ja: {
+    hello: '今日はどのようにお手伝いできますか？', sub: 'アマンさんのスキルやプロジェクトについて質問してください。',
+    placeholder: 'Ariaにメッセージを送信...', newChat: '新しいチャット', stop: '停止',
+    suggest: [['アマンさんはどんな人？', '経歴・経験'], ['使っている技術は？', 'スキル・技術スタック'], ['プロジェクトを見せて', 'ポートフォリオ'], ['採用するには？', '連絡先・稼働状況']]
+  }
+};
+
+// tiny intent matcher standing in for a model API
+const INTENTS = [
+  { k: ['who', 'about', 'aman', 'yourself', 'どんな人', '経歴', '自己紹介'],
+    en: "Aman is a full-stack developer based in Japan 🇯🇵. He builds fast interfaces, scalable backends and real-world apps, and he's open to full-time, part-time and contract roles.\n\nHe cares about clean, readable code and shipping things people actually use.",
+    ja: 'アマンさんは日本在住のフルスタック開発者です 🇯🇵。高速なUI、スケーラブルなバックエンド、実用的なアプリを開発しています。正社員・パート・業務委託のいずれも対応可能です。\n\n読みやすいコードと、実際に使われるプロダクト作りを大切にしています。' },
+  { k: ['tech', 'skill', 'stack', 'language', 'react', 'node', 'python', '技術', 'スキル'],
+    en: "Here's his main stack:\n\n• Frontend — React, TypeScript, JavaScript, HTML/CSS\n• Backend — Node.js, Python (FastAPI), REST APIs\n• Data — MongoDB, PostgreSQL, Firebase\n• Other — WebSockets, JWT/OAuth2, Canvas/WebGL, PWAs\n\nWant details on any of these?",
+    ja: '主な技術スタックはこちらです：\n\n• フロントエンド — React, TypeScript, JavaScript, HTML/CSS\n• バックエンド — Node.js, Python (FastAPI), REST API\n• データ — MongoDB, PostgreSQL, Firebase\n• その他 — WebSockets, JWT/OAuth2, Canvas/WebGL, PWA\n\n詳しく知りたい技術はありますか？' },
+  { k: ['project', 'portfolio', 'work', 'built', 'プロジェクト', '作品'],
+    en: "He has 6 featured projects:\n\n1. E-Commerce Platform — cart, payments, admin & inventory\n2. Analytics Dashboard — live charts & streaming data\n3. AI Chat App — that's me 👋\n4. Productivity App — offline-ready PWA task manager\n5. Auth System — JWT, 2FA and role-based access\n6. Generative Art Tool — Canvas art with PNG/SVG export\n\nYou can open each one from the portfolio's Projects section.",
+    ja: '注目のプロジェクトは6つあります：\n\n1. ECプラットフォーム — カート、決済、管理画面、在庫管理\n2. アナリティクスダッシュボード — リアルタイムチャート\n3. AIチャットアプリ — それが私です 👋\n4. 生産性アプリ — オフライン対応PWAタスク管理\n5. 認証システム — JWT、2FA、ロールベース制御\n6. ジェネラティブアートツール — PNG/SVG書き出し\n\nポートフォリオのProjectsから各デモを開けます。' },
+  { k: ['hire', 'contact', 'email', 'job', 'available', 'reach', '採用', '連絡', '仕事'],
+    en: "Great question! The best way is the contact form at the bottom of the portfolio, or email him directly at amanecdy@gmail.com.\n\nHe usually replies within 24 hours. His 履歴書 and 職務経歴書 are available on request too.",
+    ja: 'ありがとうございます！ポートフォリオ下部のお問い合わせフォーム、または amanecdy@gmail.com へ直接ご連絡ください。\n\n通常24時間以内に返信します。履歴書・職務経歴書もご依頼いただければお送りします。' },
+  { k: ['japan', 'japanese', '日本語', '日本'],
+    en: "Yes — Aman lives and works in Japan and is comfortable in Japanese-speaking teams. Try switching me to 日本語 in the sidebar!",
+    ja: 'はい、アマンさんは日本で生活・仕事をしており、日本語でのチームワークにも慣れています。' },
+  { k: ['hi', 'hello', 'hey', 'こんにちは', 'やあ', 'はじめまして'],
+    en: "Hi there! 👋 I'm Aria, a demo assistant. Ask me anything about Aman's work — or about this app itself.",
+    ja: 'こんにちは！👋 デモアシスタントのAriaです。アマンさんの仕事やこのアプリについて何でも聞いてください。' },
+  { k: ['how', 'work', 'stream', 'this app', 'built', '仕組み'],
+    en: "This app shows the UI side of an AI product: token-by-token streaming, a stop button, persistent chat history and multi-language support. In production the replies come from a Python FastAPI backend that proxies an LLM API; in this demo a local responder stands in so it works on static hosting.",
+    ja: 'このアプリはAIプロダクトのUI部分を示しています：トークン単位のストリーミング、停止ボタン、チャット履歴の保存、多言語対応。本番環境ではPython FastAPIバックエンドがLLM APIを中継しますが、このデモではブラウザ内で応答を生成しています。' },
+  { k: ['thank', 'thanks', 'ありがとう'],
+    en: "You're welcome! Anything else you'd like to know? 😊",
+    ja: 'どういたしまして！他に知りたいことはありますか？😊' }
+];
+const FALLBACK = {
+  en: "I'm a demo assistant, so my knowledge is focused on Aman and his work. Try asking about his skills, projects, or how to contact him!",
+  ja: 'デモアシスタントのため、アマンさんと彼の仕事に関する質問が得意です。スキル、プロジェクト、連絡方法などを聞いてみてください！'
+};
+
+let lang = store.get('chat.lang', 'en');
+let chats = store.get('chat.list', []);
+let activeId = chats[0]?.id || null;
+let streaming = null;
+
+const $ = id => document.getElementById(id);
+const active = () => chats.find(c => c.id === activeId);
+const save = () => store.set('chat.list', chats);
+
+function reply(text) {
+  const t = text.toLowerCase();
+  let best = null, score = 0;
+  INTENTS.forEach(it => {
+    // English: short keywords must be whole words ("hi" ≠ "his"), longer ones match as prefixes; Japanese: substring
+    const s = it.k.filter(k => /^[a-z ]+$/.test(k)
+      ? new RegExp(k.length <= 3 ? `\\b${k}\\b` : `\\b${k}`).test(t)
+      : t.includes(k)).length;
+    if (s > score) { score = s; best = it; }
+  });
+  return best ? best[lang] : FALLBACK[lang];
+}
+
+function renderSide() {
+  $('chats').innerHTML = chats.map(c => `
+    <div class="chat-item ${c.id === activeId ? 'active' : ''}" data-id="${c.id}">
+      <span>💬 ${esc(c.title)}</span><button data-del="${c.id}" aria-label="Delete chat">✕</button>
+    </div>`).join('') || `<div class="empty" style="padding:1rem">No chats yet</div>`;
+  document.querySelectorAll('#lang button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  $('newChat').textContent = '+ ' + T[lang].newChat;
+  $('input').placeholder = T[lang].placeholder;
+  document.documentElement.lang = lang;
+}
+
+function renderMsgs() {
+  const c = active();
+  if (!c || !c.msgs.length) {
+    $('msgs').innerHTML = `<div class="welcome"><div class="logo">🤖</div><h1>${T[lang].hello}</h1><p class="muted">${T[lang].sub}</p>
+      <div class="suggest">${T[lang].suggest.map(([q, s]) => `<button data-q="${esc(q)}">${esc(q)}<small>${s}</small></button>`).join('')}</div></div>`;
+    return;
+  }
+  $('msgs').innerHTML = c.msgs.map(m => `
+    <div class="msg ${m.role}"><div class="avatar">${m.role === 'bot' ? '🤖' : '🙂'}</div><div class="bubble">${esc(m.text)}</div></div>`).join('');
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+
+function send(text) {
+  text = text.trim();
+  if (!text || streaming) return;
+  let c = active();
+  if (!c) {
+    c = { id: Date.now().toString(36), title: text.slice(0, 40), msgs: [] };
+    chats.unshift(c); activeId = c.id;
+  }
+  c.msgs.push({ role: 'user', text });
+  const full = reply(text);
+  const msg = { role: 'bot', text: '' };
+  c.msgs.push(msg);
+  save(); renderSide(); renderMsgs();
+  $('input').value = ''; autosize();
+
+  const bubble = $('msgs').lastElementChild.querySelector('.bubble');
+  const tokens = full.match(/\S+\s*|\s+/g);
+  let i = 0;
+  $('sendBtn').textContent = '■ ' + T[lang].stop;
+  // stream a few tokens at a time after a short "thinking" delay
+  bubble.innerHTML = '<span class="cursor"></span>';
+  setTimeout(() => {
+    streaming = setInterval(() => {
+      msg.text += tokens.slice(i, i += 1 + Math.floor(Math.random() * 2)).join('');
+      bubble.textContent = msg.text;
+      bubble.insertAdjacentHTML('beforeend', '<span class="cursor"></span>');
+      $('msgs').scrollTop = $('msgs').scrollHeight;
+      if (i >= tokens.length) stop();
+    }, 45);
+  }, 450);
+}
+
+function stop() {
+  clearInterval(streaming); streaming = null;
+  $('sendBtn').textContent = 'Send ↑';
+  const c = active();
+  if (c && c.msgs.at(-1).role === 'bot' && !c.msgs.at(-1).text) c.msgs.at(-1).text = '…';
+  save(); renderMsgs();
+}
+
+function autosize() { const t = $('input'); t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+
+$('form').addEventListener('submit', e => { e.preventDefault(); streaming ? stop() : send($('input').value); });
+$('input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!streaming) send($('input').value); } });
+$('input').addEventListener('input', autosize);
+$('newChat').addEventListener('click', () => { if (streaming) stop(); activeId = null; renderSide(); renderMsgs(); $('side').classList.remove('open'); $('input').focus(); });
+$('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+$('lang').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; lang = b.dataset.lang; store.set('chat.lang', lang); renderSide(); renderMsgs(); });
+$('chats').addEventListener('click', e => {
+  if (streaming) stop();
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    chats = chats.filter(c => c.id !== del.dataset.del);
+    if (activeId === del.dataset.del) activeId = chats[0]?.id || null;
+    save(); renderSide(); renderMsgs(); return;
+  }
+  const item = e.target.closest('.chat-item');
+  if (item) { activeId = item.dataset.id; renderSide(); renderMsgs(); $('side').classList.remove('open'); }
+});
+$('msgs').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) send(b.dataset.q); });
+
+renderSide(); renderMsgs();
+</script>
+</body>
+</html>

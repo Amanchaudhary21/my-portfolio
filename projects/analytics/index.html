@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pulse — Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../shared.css"/>
+<style>
+.wrap{max-width:1280px;margin:0 auto;padding:1.5rem 2rem 1rem;}
+.controls{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;margin-bottom:1.5rem;}
+.seg{display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;}
+.seg button{background:none;border:none;color:var(--muted2);padding:.5rem .9rem;cursor:pointer;font-family:var(--mono);font-size:.66rem;}
+.seg button.active{background:rgba(0,229,255,.1);color:var(--a1);}
+.controls select{width:auto;}
+.live{display:flex;align-items:center;gap:.45rem;font-family:var(--mono);font-size:.66rem;color:var(--muted2);margin-left:auto;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--a3);box-shadow:0 0 10px var(--a3);animation:blink 1.4s infinite;}
+.live.paused .dot{background:var(--muted);box-shadow:none;animation:none;}
+@keyframes blink{50%{opacity:.3;}}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1rem;}
+.kpi{padding:1.2rem 1.3rem;}
+.kpi-val{font-size:1.7rem;font-weight:800;margin:.35rem 0 .2rem;font-variant-numeric:tabular-nums;}
+.delta{font-family:var(--mono);font-size:.65rem;}
+.delta.up{color:var(--a3);}
+.delta.down{color:var(--a2);}
+.flash{animation:flash .6s;}
+@keyframes flash{from{color:var(--a1);}}
+
+.charts{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1rem;}
+.panel{padding:1.2rem 1.3rem;min-width:0;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:1rem;}
+.panel-title{font-weight:700;}
+.legend{display:flex;gap:1rem;font-family:var(--mono);font-size:.62rem;color:var(--muted2);}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:.35rem;vertical-align:middle;}
+svg{display:block;width:100%;overflow:visible;}
+.axis text{fill:var(--muted);font-family:var(--mono);font-size:10px;}
+.grid-line{stroke:var(--border);stroke-width:1;}
+.tip{position:fixed;pointer-events:none;z-index:60;padding:.5rem .7rem;border-radius:6px;background:var(--card2);border:1px solid var(--border2);font-family:var(--mono);font-size:.65rem;line-height:1.6;opacity:0;transition:opacity .15s;}
+.tip.show{opacity:1;}
+
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.bar-row{display:grid;grid-template-columns:90px 1fr 60px;align-items:center;gap:.8rem;margin-bottom:.7rem;font-size:.8rem;}
+.bar-track{height:8px;border-radius:4px;background:var(--border);overflow:hidden;}
+.bar-fill{height:100%;border-radius:inherit;transition:width .6s cubic-bezier(.22,1,.36,1);}
+.bar-val{font-family:var(--mono);font-size:.7rem;text-align:right;}
+.feed{max-height:260px;overflow:auto;}
+.event{display:flex;gap:.7rem;align-items:center;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.8rem;animation:slide .35s;}
+.event time{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-left:auto;white-space:nowrap;}
+@keyframes slide{from{opacity:0;transform:translateY(-6px);}}
+.donut-wrap{display:flex;align-items:center;gap:1.2rem;}
+.donut-wrap svg{width:150px;flex-shrink:0;}
+.donut-legend{font-size:.78rem;display:grid;gap:.5rem;}
+.donut-legend span{font-family:var(--mono);color:var(--muted2);margin-left:.3rem;}
+@media(max-width:960px){.kpis{grid-template-columns:1fr 1fr;}.charts,.bottom{grid-template-columns:1fr;}}
+@media(max-width:640px){.wrap{padding:1rem;}.live{margin-left:0;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="../../index.html#projects" class="back-link">← Portfolio</a>
+  <div class="topbar-title">📊 <span>Pulse Analytics</span> <span class="demo-badge">Live demo</span></div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <div class="seg" id="range">
+      <button data-range="24">24h</button><button data-range="7" class="active">7d</button><button data-range="30">30d</button>
+    </div>
+    <select class="input" id="channel" aria-label="Channel">
+      <option value="all">All channels</option><option value="organic">Organic</option><option value="ads">Paid ads</option><option value="social">Social</option>
+    </select>
+    <button class="btn btn-sm" id="pauseBtn">⏸ Pause stream</button>
+    <div class="live" id="live"><span class="dot"></span><span id="liveText">Live · connected</span></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="charts">
+    <div class="card panel">
+      <div class="panel-head">
+        <div class="panel-title">Traffic & conversions</div>
+        <div class="legend"><span><i style="background:var(--a1)"></i>Visitors</span><span><i style="background:var(--a2)"></i>Conversions</span></div>
+      </div>
+      <svg id="lineChart" viewBox="0 0 640 260" role="img" aria-label="Traffic line chart"></svg>
+    </div>
+    <div class="card panel">
+      <div class="panel-head"><div class="panel-title">Devices</div></div>
+      <div class="donut-wrap"><svg id="donut" viewBox="0 0 120 120" role="img" aria-label="Device share"></svg><div class="donut-legend" id="donutLegend"></div></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="card panel">
+      <div class="panel-head"><div class="panel-title">Top pages</div><span class="tag">views</span></div>
+      <div id="bars"></div>
+    </div>
+    <div class="card panel">
+      <div class="panel-head"><div class="panel-title">Live events</div><span class="tag" id="eventCount">0 events</span></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+<p class="demo-note">Demo build — data is generated in the browser and streamed every 2 seconds to simulate a WebSocket feed.</p>
+
+<script src="../shared.js"></script>
+<script>
+const CH_MULT = { all: 1, organic: .45, ads: .3, social: .25 };
+let range = 7, channel = 'all', paused = false, series = [], events = 0;
+let pages = { '/': 4200, '/pricing': 2100, '/blog': 1800, '/docs': 1500, '/signup': 900 };
+const devices = [{ k: 'Desktop', v: 58, c: 'var(--a1)' }, { k: 'Mobile', v: 34, c: 'var(--a2)' }, { k: 'Tablet', v: 8, c: 'var(--a3)' }];
+
+// seeded noise so a given range always starts from the same shape
+function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+
+function build() {
+  const r = rng(range * 97 + 13), n = range === 24 ? 24 : range;
+  const m = CH_MULT[channel];
+  series = Array.from({ length: n }, (_, i) => {
+    const base = range === 24 ? 380 + Math.sin(i / 3.8) * 220 : 5200 + Math.sin(i / 2) * 1400 + i * 40;
+    const v = Math.round((base + r() * base * .35) * m);
+    return { label: range === 24 ? `${String(i).padStart(2, '0')}:00` : `D${i + 1}`, v, c: Math.round(v * (.028 + r() * .02)) };
+  });
+}
+
+function kpis(flash) {
+  const vis = series.reduce((s, d) => s + d.v, 0), conv = series.reduce((s, d) => s + d.c, 0);
+  const half = Math.floor(series.length / 2);
+  const trend = a => { const x = a.slice(0, half).reduce((s, d) => s + d, 0), y = a.slice(half).reduce((s, d) => s + d, 0); return ((y - x) / x * 100); };
+  const items = [
+    ['Visitors', vis.toLocaleString(), trend(series.map(d => d.v))],
+    ['Conversions', conv.toLocaleString(), trend(series.map(d => d.c))],
+    ['Conv. rate', (conv / vis * 100).toFixed(2) + '%', trend(series.map(d => d.c / d.v))],
+    ['Revenue', '¥' + (conv * 3480).toLocaleString(), trend(series.map(d => d.c))]
+  ];
+  document.getElementById('kpis').innerHTML = items.map(([k, v, t]) => `
+    <div class="card kpi"><div class="label">${k}</div><div class="kpi-val ${flash ? 'flash' : ''}">${v}</div>
+    <div class="delta ${t >= 0 ? 'up' : 'down'}">${t >= 0 ? '▲' : '▼'} ${Math.abs(t).toFixed(1)}% vs prev. period</div></div>`).join('');
+}
+
+function line() {
+  const W = 640, H = 260, P = { l: 44, r: 10, t: 10, b: 26 };
+  const max = Math.max(...series.map(d => d.v)) * 1.1;
+  const x = i => P.l + i * (W - P.l - P.r) / (series.length - 1);
+  const y = v => H - P.b - v / max * (H - P.t - P.b);
+  const path = key => series.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[key] * (key === 'c' ? 12 : 1)).toFixed(1)}`).join('');
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = max / 4 * i;
+    g += `<line class="grid-line" x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${P.l - 8}" y="${y(v) + 3}" text-anchor="end">${v >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.round(v)}</text>`;
+  }
+  const step = Math.ceil(series.length / 8);
+  series.forEach((d, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${d.label}</text>`; });
+  const area = path('v') + `L${x(series.length - 1)},${H - P.b}L${P.l},${H - P.b}Z`;
+  document.getElementById('lineChart').innerHTML = `
+    <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00e5ff" stop-opacity=".25"/><stop offset="1" stop-color="#00e5ff" stop-opacity="0"/></linearGradient></defs>
+    <g class="axis">${g}</g>
+    <path d="${area}" fill="url(#ga)"/>
+    <path d="${path('v')}" fill="none" stroke="var(--a1)" stroke-width="2"/>
+    <path d="${path('c')}" fill="none" stroke="var(--a2)" stroke-width="2" stroke-dasharray="4 3"/>
+    ${series.map((d, i) => `<rect x="${x(i) - (W / series.length) / 2}" y="0" width="${W / series.length}" height="${H}" fill="transparent" data-i="${i}"/>`).join('')}`;
+}
+
+function donut() {
+  const total = devices.reduce((s, d) => s + d.v, 0), R = 46, C = 2 * Math.PI * R;
+  let off = 0;
+  document.getElementById('donut').innerHTML = devices.map(d => {
+    const len = d.v / total * C;
+    const s = `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${d.c}" stroke-width="14" stroke-dasharray="${len - 2} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;
+    off += len; return s;
+  }).join('') + `<text x="60" y="58" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="800">${total}%</text><text x="60" y="74" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="JetBrains Mono">sessions</text>`;
+  document.getElementById('donutLegend').innerHTML = devices.map(d => `<div><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${d.c}"></i> ${d.k}<span>${(d.v / total * 100).toFixed(0)}%</span></div>`).join('');
+}
+
+function bars() {
+  const max = Math.max(...Object.values(pages));
+  const colors = ['var(--a1)', 'var(--a2)', 'var(--a3)', '#a78bfa', '#ffc94d'];
+  document.getElementById('bars').innerHTML = Object.entries(pages).sort((a, b) => b[1] - a[1]).map(([k, v], i) => `
+    <div class="bar-row"><span class="mono" style="font-size:.72rem">${k}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${v / max * 100}%;background:${colors[i]}"></div></div>
+    <span class="bar-val">${v.toLocaleString()}</span></div>`).join('');
+}
+
+const EVENTS = [['🛒', 'Purchase completed', '/checkout'], ['👤', 'New signup', '/signup'], ['👀', 'Page view', '/pricing'], ['📄', 'Docs opened', '/docs'], ['✍️', 'Blog read', '/blog'], ['🏠', 'Landing visit', '/']];
+const CITIES = ['Tokyo', 'Osaka', 'Delhi', 'Kathmandu', 'Seoul', 'London', 'NYC', 'Sydney'];
+function pushEvent() {
+  const [ic, txt, page] = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  const city = CITIES[Math.floor(Math.random() * CITIES.length)];
+  const feed = document.getElementById('feed');
+  feed.insertAdjacentHTML('afterbegin', `<div class="event"><span>${ic}</span><span>${txt} <span class="muted">· ${city}</span></span><time>${new Date().toLocaleTimeString()}</time></div>`);
+  if (feed.children.length > 40) feed.lastElementChild.remove();
+  document.getElementById('eventCount').textContent = `${++events} events`;
+  pages[page === '/checkout' ? '/signup' : page] += Math.floor(Math.random() * 40) + 5;
+}
+
+// simulated socket message: nudge the newest point and append events
+function tick() {
+  if (paused) return;
+  const last = series[series.length - 1];
+  const add = Math.floor(Math.random() * 60 * CH_MULT[channel]) + 5;
+  last.v += add; last.c += Math.random() < .3 ? Math.ceil(add * .04) : 0;
+  devices[Math.floor(Math.random() * 3)].v += Math.random() < .5 ? 1 : 0;
+  pushEvent(); kpis(true); line(); bars(); donut();
+}
+
+function render() { build(); kpis(); line(); donut(); bars(); }
+
+document.getElementById('range').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  range = +b.dataset.range;
+  document.querySelectorAll('#range button').forEach(x => x.classList.toggle('active', x === b));
+  render();
+});
+document.getElementById('channel').addEventListener('change', e => { channel = e.target.value; render(); });
+document.getElementById('pauseBtn').addEventListener('click', e => {
+  paused = !paused;
+  e.target.textContent = paused ? '▶ Resume stream' : '⏸ Pause stream';
+  document.getElementById('live').classList.toggle('paused', paused);
+  document.getElementById('liveText').textContent = paused ? 'Paused' : 'Live · connected';
+});
+
+const tip = document.getElementById('tip');
+document.getElementById('lineChart').addEventListener('mousemove', e => {
+  const i = e.target.dataset.i; if (i === undefined) return tip.classList.remove('show');
+  const d = series[i];
+  tip.innerHTML = `<b>${d.label}</b><br>Visitors: ${d.v.toLocaleString()}<br>Conversions: ${d.c.toLocaleString()}`;
+  tip.style.left = e.clientX + 14 + 'px'; tip.style.top = e.clientY + 14 + 'px';
+  tip.classList.add('show');
+});
+document.getElementById('lineChart').addEventListener('mouseleave', () => tip.classList.remove('show'));
+
+render();
+for (let i = 0; i < 6; i++) pushEvent();
+setInterval(tick, 2000);
+</script>
+</body>
+</html>
