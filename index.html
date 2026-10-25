@@ -388,7 +388,7 @@
           <p>Looking for a dedicated developer for your team in Japan? Let's talk. Open to full-time, part-time, and contract roles.</p>
           <p>Have a project in mind or just want to say hi? My inbox is always open.</p>
         </div>
-        <a href="noob-amanecdy.com" class="c-email">noob-amanecdy.com</a>
+        <a href="mailto:amanecdy@gmail.com" class="c-email">amanecdy@gmail.com</a>
         <div class="social-grid">
           <a href="https://github.com/" target="_blank" class="soc-btn">
             <div class="soc-icon">⎔</div>
@@ -416,28 +416,52 @@
           </a>
         </div>
       </div>
-      <div class="contact-form reveal-r">
+      <!-- Replace YOUR_FORM_ID with your Formspree form ID (https://formspree.io) -->
+      <form class="contact-form reveal-r" id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" novalidate>
+        <div class="form-head">
+          <div class="form-title">Send a message</div>
+          <div class="form-note">Usually replies within 24 hours</div>
+        </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Name</label>
-            <input type="text" class="form-input" id="fname" placeholder="Your name"/>
+            <label class="form-label" for="fname">Name <span class="req">*</span></label>
+            <input type="text" class="form-input" id="fname" name="name" placeholder="Your name" autocomplete="name" required maxlength="80" aria-describedby="fname-err"/>
+            <div class="field-err" id="fname-err"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-input" id="femail" placeholder="your@email.com"/>
+            <label class="form-label" for="femail">Email <span class="req">*</span></label>
+            <input type="email" class="form-input" id="femail" name="email" placeholder="your@email.com" autocomplete="email" required maxlength="120" aria-describedby="femail-err"/>
+            <div class="field-err" id="femail-err"></div>
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Subject</label>
-          <input type="text" class="form-input" id="fsubject" placeholder="Job opportunity / Project / Hello"/>
+          <span class="form-label" id="ftopic-label">Topic</span>
+          <div class="topic-chips" role="radiogroup" aria-labelledby="ftopic-label">
+            <label class="chip"><input type="radio" name="topic" value="Job opportunity" checked/><span>Job opportunity</span></label>
+            <label class="chip"><input type="radio" name="topic" value="Freelance project"/><span>Project</span></label>
+            <label class="chip"><input type="radio" name="topic" value="Just saying hi"/><span>Just saying hi</span></label>
+          </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Message</label>
-          <textarea class="form-input" id="fmessage" placeholder="Tell me about your project or opportunity..."></textarea>
+          <label class="form-label" for="fsubject">Subject</label>
+          <input type="text" class="form-input" id="fsubject" name="subject" placeholder="e.g. Backend developer position" maxlength="120"/>
         </div>
-        <button class="btn-send" id="sendBtn" onclick="handleSend()">Send Message →</button>
-        <div class="form-msg" id="formMsg"></div>
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="fmessage">Message <span class="req">*</span></label>
+          <textarea class="form-input" id="fmessage" name="message" placeholder="Tell me about your project or opportunity..." required minlength="10" maxlength="2000" aria-describedby="fmessage-err fmessage-count"></textarea>
+          <div class="field-foot">
+            <div class="field-err" id="fmessage-err"></div>
+            <div class="char-count" id="fmessage-count">0 / 2000</div>
+          </div>
+        </div>
+        <!-- honeypot: hidden from people, bots fill it in -->
+        <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"/>
+        <button type="submit" class="btn-send" id="sendBtn">
+          <span class="btn-label">Send Message →</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+        <div class="form-msg" id="formMsg" role="status" aria-live="polite"></div>
+      </form>
     </div>
   </div>
 </section>

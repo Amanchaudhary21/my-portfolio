@@ -142,40 +142,94 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 });
 
 // ─── CONTACT FORM ───
-function handleSend() {
-  const name = document.getElementById('fname').value.trim();
-  const email = document.getElementById('femail').value.trim();
-  const msg = document.getElementById('fmessage').value.trim();
-  const msgEl = document.getElementById('formMsg');
-  const btn = document.getElementById('sendBtn');
-  if (!name || !email || !msg) {
-    msgEl.className = 'form-msg error show';
-    msgEl.textContent = '⚠ Please fill in all required fields.';
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    msgEl.className = 'form-msg error show';
-    msgEl.textContent = '⚠ Please enter a valid email address.';
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-  setTimeout(() => {
-    btn.textContent = '✓ Message Sent!';
-    btn.style.background = 'linear-gradient(90deg,var(--a3),#80cc00)';
-    msgEl.className = 'form-msg success show';
-    msgEl.textContent = '✓ Thanks! I\'ll get back to you within 24 hours.';
-    document.getElementById('fname').value='';
-    document.getElementById('femail').value='';
-    document.getElementById('fsubject').value='';
-    document.getElementById('fmessage').value='';
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Send Message →';
-      btn.style.background = '';
-    }, 4000);
-  }, 1200);
+const form = document.getElementById('contactForm');
+const formMsg = document.getElementById('formMsg');
+const sendBtn = document.getElementById('sendBtn');
+const sendLabel = sendBtn.querySelector('.btn-label');
+const msgInput = document.getElementById('fmessage');
+const msgCount = document.getElementById('fmessage-count');
+
+const validators = {
+  fname: v => v.length < 2 ? 'Please enter your name.' : '',
+  femail: v => !v ? 'Please enter your email.'
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? 'That email doesn\'t look right.' : '',
+  fmessage: v => v.length < 10 ? 'Please write at least 10 characters.' : ''
+};
+
+function validateField(id) {
+  const input = document.getElementById(id);
+  const err = validators[id](input.value.trim());
+  input.setAttribute('aria-invalid', err ? 'true' : 'false');
+  input.closest('.form-group').classList.toggle('invalid', !!err);
+  input.closest('.form-group').classList.toggle('valid', !err);
+  document.getElementById(id + '-err').textContent = err;
+  return !err;
 }
+
+function showFormMsg(type, text) {
+  formMsg.className = `form-msg ${type} show`;
+  formMsg.textContent = text;
+}
+
+// validate on blur, then live once the field has been marked invalid
+Object.keys(validators).forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('blur', () => { if (input.value) validateField(id); });
+  input.addEventListener('input', () => {
+    if (input.closest('.form-group').classList.contains('invalid')) validateField(id);
+  });
+});
+
+msgInput.addEventListener('input', () => {
+  const n = msgInput.value.length;
+  msgCount.textContent = `${n} / ${msgInput.maxLength}`;
+  msgCount.classList.toggle('near', n > msgInput.maxLength * 0.9);
+});
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const results = Object.keys(validators).map(validateField);
+  if (results.includes(false)) {
+    form.querySelector('[aria-invalid="true"]').focus();
+    showFormMsg('error', '⚠ Please fix the highlighted fields.');
+    return;
+  }
+  if (form.action.includes('YOUR_FORM_ID')) {
+    showFormMsg('error', '⚠ Form is not configured yet — set your Formspree ID in index.html.');
+    return;
+  }
+
+  sendBtn.disabled = true;
+  sendBtn.classList.add('loading');
+  sendLabel.textContent = 'Sending...';
+  formMsg.className = 'form-msg';
+
+  try {
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { Accept: 'application/json' }
+    });
+    if (!res.ok) throw new Error(res.status);
+    form.reset();
+    msgCount.textContent = `0 / ${msgInput.maxLength}`;
+    form.querySelectorAll('.form-group').forEach(g => g.classList.remove('valid', 'invalid'));
+    sendBtn.classList.add('sent');
+    sendLabel.textContent = '✓ Message Sent!';
+    showFormMsg('success', '✓ Thanks! I\'ll get back to you within 24 hours.');
+    setTimeout(() => {
+      sendBtn.classList.remove('sent');
+      sendLabel.textContent = 'Send Message →';
+      sendBtn.disabled = false;
+    }, 4000);
+  } catch {
+    sendBtn.disabled = false;
+    sendLabel.textContent = 'Send Message →';
+    showFormMsg('error', '⚠ Something went wrong. Please try again or contact me directly.');
+  } finally {
+    sendBtn.classList.remove('loading');
+  }
+});
 
 // ─── BG CANVAS — PARTICLE NETWORK ───
 const canvas = document.getElementById('bgCanvas');
