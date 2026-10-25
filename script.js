@@ -31,7 +31,7 @@ document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; })
   cur2.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
   requestAnimationFrame(anim);
 })();
-document.querySelectorAll('a,button,.skill-block,.pcard,.soc-btn,.filter-btn').forEach(el => {
+document.querySelectorAll('a,button,.skill-block,.pcard,.soc-btn,.filter-btn,.doc-card').forEach(el => {
   el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
   el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
 });
@@ -39,7 +39,7 @@ document.querySelectorAll('a,button,.skill-block,.pcard,.soc-btn,.filter-btn').f
 // ─── NAV SCROLL + ACTIVE ───
 const nav = document.getElementById('nav');
 const navLinks = document.querySelectorAll('.nav-links a[data-section]');
-const sections = ['skills','projects','about','contact'];
+const sections = ['skills','projects','about','resume','contact'];
 window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 60);
   document.getElementById('backTop').classList.toggle('show', window.scrollY > 400);
@@ -150,20 +150,33 @@ const msgInput = document.getElementById('fmessage');
 const msgCount = document.getElementById('fmessage-count');
 
 const validators = {
-  fname: v => v.length < 2 ? 'Please enter your name.' : '',
+  fname: v => !v ? 'Please enter your first name.' : '',
+  flname: v => !v ? 'Please enter your last name.' : '',
   femail: v => !v ? 'Please enter your email.'
     : !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? 'That email doesn\'t look right.' : '',
+  // optional, but must look like a phone number if filled in
+  fphone: v => v && !/^\d{6,15}$/.test(v.replace(/[\s\-().]/g, '')) ? 'Please enter a valid phone number.' : '',
   fmessage: v => v.length < 10 ? 'Please write at least 10 characters.' : ''
 };
+const requiredFields = ['fname', 'flname', 'femail', 'fmessage'];
+const progressFill = document.getElementById('formProgress');
+const progressText = document.getElementById('formProgressText');
 
 function validateField(id) {
   const input = document.getElementById(id);
-  const err = validators[id](input.value.trim());
+  const value = input.value.trim();
+  const err = validators[id](value);
   input.setAttribute('aria-invalid', err ? 'true' : 'false');
   input.closest('.form-group').classList.toggle('invalid', !!err);
-  input.closest('.form-group').classList.toggle('valid', !err);
+  input.closest('.form-group').classList.toggle('valid', !err && !!value);
   document.getElementById(id + '-err').textContent = err;
   return !err;
+}
+
+function updateProgress() {
+  const done = requiredFields.filter(id => !validators[id](document.getElementById(id).value.trim())).length;
+  progressFill.style.width = (done / requiredFields.length * 100) + '%';
+  progressText.textContent = `${done} / ${requiredFields.length}`;
 }
 
 function showFormMsg(type, text) {
@@ -177,6 +190,7 @@ Object.keys(validators).forEach(id => {
   input.addEventListener('blur', () => { if (input.value) validateField(id); });
   input.addEventListener('input', () => {
     if (input.closest('.form-group').classList.contains('invalid')) validateField(id);
+    updateProgress();
   });
 });
 
@@ -204,16 +218,23 @@ form.addEventListener('submit', async e => {
   sendLabel.textContent = 'Sending...';
   formMsg.className = 'form-msg';
 
+  const data = new FormData(form);
+  const phone = data.get('phone').trim();
+  data.set('phone', phone ? `${data.get('phone_country')} ${phone}` : '');
+  data.delete('phone_country');
+  data.set('name', `${data.get('first_name').trim()} ${data.get('last_name').trim()}`);
+
   try {
     const res = await fetch(form.action, {
       method: 'POST',
-      body: new FormData(form),
+      body: data,
       headers: { Accept: 'application/json' }
     });
     if (!res.ok) throw new Error(res.status);
     form.reset();
     msgCount.textContent = `0 / ${msgInput.maxLength}`;
     form.querySelectorAll('.form-group').forEach(g => g.classList.remove('valid', 'invalid'));
+    updateProgress();
     sendBtn.classList.add('sent');
     sendLabel.textContent = '✓ Message Sent!';
     showFormMsg('success', '✓ Thanks! I\'ll get back to you within 24 hours.');
